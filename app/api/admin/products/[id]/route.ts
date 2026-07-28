@@ -38,6 +38,7 @@ export async function PUT(
     }
 
     const body = await req.json();
+    console.log(body.images);
     const validationResult = adminProductSchema.safeParse(body);
 
     if (!validationResult.success) {

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, Save, Plus, Trash2, Tag, Layers, CheckCircle } from "lucide-react";
 import { AdminCard, AdminButton, AdminInput } from "@/components/admin";
-import { ImageUploadPreview } from "./ImageUploadPreview";
+import { ImageUploader } from "@/components/admin/ImageUploader";
 import { toast } from "react-hot-toast";
 
 export interface ProductFormProps {
@@ -118,7 +118,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
     const filteredImages = images.filter((img) => img.trim() !== "");
     if (filteredImages.length === 0) {
-      toast.error("At least one product image URL is required");
+      toast.error("Please upload at least one product image");
       return;
     }
 
@@ -143,6 +143,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       sizes,
       heights: hasHeightOptions ? heights : [],
     };
+
+    console.log("Images:", payload.images);
+    console.log("Payload:", JSON.stringify(payload, null, 2));
 
     onSubmit(payload);
   };
@@ -239,8 +242,55 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           </AdminCard>
 
           {/* Product Media Gallery */}
-          <AdminCard title="Product Images" description="Primary image and gallery previews">
-            <ImageUploadPreview images={images} onChange={setImages} />
+          <AdminCard
+            title="Product Images"
+            description="Upload your product images"
+          >
+            {/* <div className="space-y-6">
+              {images.map((image, index) => (
+                <div key={index} className="space-y-2">
+                  <ImageUploader
+                    bucket="products"
+                    folder="products"
+                    label={`Image ${index + 1}`}
+                    value={image}
+                    onChange={(url) => {
+                      const updated = [...images];
+                      updated[index] = url;
+                      setImages(updated);
+                    }}
+                  />
+
+                  {images.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setImages(images.filter((_, i) => i !== index))
+                      }
+                      className="text-red-600 text-xs font-medium"
+                    >
+                      Remove Image
+                    </button>
+                  )}
+                </div>
+              ))}
+
+              <AdminButton
+                type="button"
+                variant="outline"
+                onClick={() => setImages([...images, ""])}
+              >
+                <Plus size={14} className="mr-2" />
+                Add Another Image
+              </AdminButton>
+            </div> */}
+
+            <ImageUploader
+              bucket="products"
+              folder="products"
+              images={images}
+              onChange={setImages}
+            />
           </AdminCard>
 
           {/* Size Variants & Stock */}

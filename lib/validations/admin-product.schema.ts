@@ -17,7 +17,16 @@ export const adminProductSchema = z.object({
   newArrival: z.boolean().default(false),
   hasHeightOptions: z.boolean().default(false),
   isActive: z.boolean().default(true),
-  images: z.array(z.string().url("Must be a valid image URL")).min(1, "At least one product image is required"),
+  images: z
+    .array(
+      z.string().refine(
+        (value) => value.startsWith("/") || /^https?:\/\//.test(value),
+        {
+          message: "Must be a valid image path or URL",
+        }
+      )
+    )
+    .min(1, "At least one product image is required"),
   sizes: z
     .array(
       z.object({
