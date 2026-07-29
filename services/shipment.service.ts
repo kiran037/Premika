@@ -49,8 +49,8 @@ export class ShipmentService {
     const delhiveryResult = await DelhiveryService.createShipment({
       orderNumber: order.orderNumber,
       orderDate: new Date(order.createdAt).toISOString(),
-      paymentMode: "Pre-Paid",
-      totalAmount: order.total / 100, // INR
+      paymentMode: "Prepaid" as any,
+      totalAmount: order.total, // Whole Rupees in database
       consigneeName: `${customer?.firstName || ""} ${customer?.lastName || ""}`.trim() || "Customer",
       consigneePhone: address?.phone || customer?.phone || "0000000000",
       consigneeEmail: customer?.email || "",
@@ -74,7 +74,7 @@ export class ShipmentService {
         name: i.productName,
         sku: i.productSku || i.id,
         units: i.quantity,
-        price: i.unitPrice / 100,
+        price: i.unitPrice,
       })),
       weight: options?.weight,
       length: options?.length,
