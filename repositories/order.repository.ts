@@ -376,9 +376,14 @@ export class OrderRepository {
       db.select().from(shipments).where(eq(shipments.orderId, orderRecord.id)),
     ]);
 
-    // Attach product images to items
+    // Attach product images, sizes, and heights to items
     const productIds = items.map((i) => i.productId);
+    const sizeIds = items.map((i) => i.productSizeId).filter(Boolean) as string[];
+    const heightIds = items.map((i) => i.productHeightId).filter(Boolean) as string[];
+
     let imagesMap = new Map<string, string>();
+    let sizesMap = new Map<string, string>();
+    let heightsMap = new Map<string, string>();
 
     if (productIds.length > 0) {
       const pImages = await db.select().from(productImages).where(inArray(productImages.productId, productIds));
@@ -389,9 +394,23 @@ export class OrderRepository {
       });
     }
 
+    if (sizeIds.length > 0) {
+      const { productSizes } = await import("@/db/schema/product");
+      const sizes = await db.select().from(productSizes).where(inArray(productSizes.id, sizeIds));
+      sizes.forEach((s) => sizesMap.set(s.id, s.size));
+    }
+
+    if (heightIds.length > 0) {
+      const { productHeights } = await import("@/db/schema/product");
+      const heights = await db.select().from(productHeights).where(inArray(productHeights.id, heightIds));
+      heights.forEach((h) => heightsMap.set(h.id, h.label));
+    }
+
     const enrichedItems = items.map((item) => ({
       ...item,
       image: imagesMap.get(item.productId) || "/placeholder.svg",
+      size: item.productSizeId ? sizesMap.get(item.productSizeId) || null : null,
+      height: item.productHeightId ? heightsMap.get(item.productHeightId) || null : null,
     }));
 
     let trackingHistory: any[] = [];

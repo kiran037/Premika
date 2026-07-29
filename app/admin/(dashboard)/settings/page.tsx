@@ -4,9 +4,11 @@ import React, { useState, useEffect } from "react";
 import { StoreSettingsForm } from "@/components/admin/StoreSettingsForm";
 import { StoreContactForm } from "@/components/admin/StoreContactForm";
 import { SocialLinksManager, SocialLink } from "@/components/admin/SocialLinksManager";
+import { DelhiverySettingsForm } from "@/components/admin/DelhiverySettingsForm";
 import { Skeleton } from "@/components/admin/Skeleton";
 import { AdminCard } from "@/components/admin/AdminCard";
 import { StoreSettingsInput, StoreContactsInput, SocialLinkInput } from "@/lib/validations/admin-store.schema";
+import { DelhiverySettingsInput } from "@/lib/validations/admin-delhivery.schema";
 import {
   Settings,
   Building,
@@ -24,37 +26,42 @@ import {
 import { toast } from "react-hot-toast";
 
 export default function AdminSettingsPage() {
-  const [activeTab, setActiveTab] = useState<"general" | "contact" | "social" | "integrations">("general");
+  const [activeTab, setActiveTab] = useState<"general" | "contact" | "social" | "delhivery" | "integrations">("general");
 
   const [settings, setSettings] = useState<StoreSettingsInput | null>(null);
   const [contacts, setContacts] = useState<StoreContactsInput | null>(null);
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
+  const [delhiverySettings, setDelhiverySettings] = useState<DelhiverySettingsInput | null>(null);
   const [systemInfo, setSystemInfo] = useState<any>(null);
 
   const [loading, setLoading] = useState(true);
   const [savingSettings, setSavingSettings] = useState(false);
   const [savingContacts, setSavingContacts] = useState(false);
+  const [savingDelhivery, setSavingDelhivery] = useState(false);
 
   const loadAllData = async () => {
     setLoading(true);
     try {
-      const [settingsRes, contactsRes, socialRes, sysRes] = await Promise.all([
+      const [settingsRes, contactsRes, socialRes, delhiveryRes, sysRes] = await Promise.all([
         fetch("/api/admin/settings/store"),
         fetch("/api/admin/settings/contact"),
         fetch("/api/admin/settings/social"),
+        fetch("/api/admin/settings/delhivery"),
         fetch("/api/admin/system"),
       ]);
 
-      const [sJson, cJson, socJson, sysJson] = await Promise.all([
+      const [sJson, cJson, socJson, dJson, sysJson] = await Promise.all([
         settingsRes.json(),
         contactsRes.json(),
         socialRes.json(),
+        delhiveryRes.json(),
         sysRes.json(),
       ]);
 
       if (sJson.success) setSettings(sJson.data);
       if (cJson.success) setContacts(cJson.data);
       if (socJson.success) setSocialLinks(socJson.data || []);
+      if (dJson.success) setDelhiverySettings(dJson.data);
       if (sysJson.success) setSystemInfo(sysJson.data);
     } catch {
       toast.error("Failed to load store settings");
@@ -108,6 +115,28 @@ export default function AdminSettingsPage() {
       toast.error("Error saving store contacts");
     } finally {
       setSavingContacts(false);
+    }
+  };
+
+  const handleSaveDelhivery = async (data: DelhiverySettingsInput) => {
+    setSavingDelhivery(true);
+    try {
+      const res = await fetch("/api/admin/settings/delhivery", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const json = await res.json();
+      if (json.success) {
+        toast.success(json.message || "Delhivery settings updated successfully");
+        setDelhiverySettings(json.data);
+      } else {
+        toast.error(json.message || "Failed to update Delhivery settings");
+      }
+    } catch {
+      toast.error("Error saving Delhivery settings");
+    } finally {
+      setSavingDelhivery(false);
     }
   };
 
@@ -170,7 +199,7 @@ export default function AdminSettingsPage() {
           <span>Store Configuration & Business Settings</span>
         </h1>
         <p className="text-xs text-stone-500 mt-1">
-          Manage store identity, branding assets, contact information, social links, and integration statuses.
+          Manage store identity, branding assets, contact information, social links, Delhivery shipping, and integration statuses.
         </p>
       </div>
 
@@ -213,6 +242,18 @@ export default function AdminSettingsPage() {
         </button>
 
         <button
+          onClick={() => setActiveTab("delhivery")}
+          className={`flex items-center gap-2 px-4 py-2.5 border-b-2 transition whitespace-nowrap ${
+            activeTab === "delhivery"
+              ? "border-[#B67B5C] text-[#B67B5C]"
+              : "border-transparent text-stone-500 hover:text-stone-900"
+          }`}
+        >
+          <Truck size={16} />
+          <span>Delhivery Logistics</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab("integrations")}
           className={`flex items-center gap-2 px-4 py-2.5 border-b-2 transition whitespace-nowrap ${
             activeTab === "integrations"
@@ -248,6 +289,14 @@ export default function AdminSettingsPage() {
           onAdd={handleAddSocial}
           onUpdate={handleUpdateSocial}
           onDelete={handleDeleteSocial}
+        />
+      )}
+
+      {activeTab === "delhivery" && (
+        <DelhiverySettingsForm
+          initialData={delhiverySettings}
+          onSave={handleSaveDelhivery}
+          isLoading={savingDelhivery}
         />
       )}
 

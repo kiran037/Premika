@@ -38,3 +38,5 @@ export const socialLinkSchema = z.object({
 export type StoreSettingsInput = z.infer<typeof storeSettingsSchema>;
 export type StoreContactsInput = z.infer<typeof storeContactsSchema>;
 export type SocialLinkInput = z.infer<typeof socialLinkSchema>;
+
+export { delhiverySettingsSchema, type DelhiverySettingsInput } from "./admin-delhivery.schema";

@@ -26,6 +26,7 @@ import {
   AdminTable,
   Skeleton,
 } from "@/components/admin";
+import { ShipmentCreateModal } from "@/components/admin/ShipmentCreateModal";
 import { toast } from "react-hot-toast";
 
 export default function OrderDetailPage() {
@@ -72,6 +73,47 @@ export default function OrderDetailPage() {
     fetchOrderDetails();
   }, [id]);
 
+  const [isShipmentModalOpen, setIsShipmentModalOpen] = useState(false);
+  const [isSyncingShipment, setIsSyncingShipment] = useState(false);
+
+  const handleShipmentSuccess = async () => {
+    const refreshed = await fetch(`/api/admin/orders/${id}`).then((r) => r.json());
+    if (refreshed.success) setData(refreshed.data);
+  };
+
+  const handleSyncDelhiveryStatus = async () => {
+    setIsSyncingShipment(true);
+    try {
+      const res = await fetch(`/api/admin/orders/${id}/shipment/sync`, { method: "POST" });
+      const json = await res.json();
+      if (json.success) {
+        toast.success("Shipment status synced successfully!");
+        const refreshed = await fetch(`/api/admin/orders/${id}`).then((r) => r.json());
+        if (refreshed.success) setData(refreshed.data);
+      } else {
+        toast.error(json.message || "Failed to sync shipment status");
+      }
+    } catch {
+      toast.error("Error syncing status from Delhivery");
+    } finally {
+      setIsSyncingShipment(false);
+    }
+  };
+
+  const handleDownloadLabel = async () => {
+    try {
+      const res = await fetch(`/api/admin/orders/${id}/shipment/label`);
+      const json = await res.json();
+      if (json.success && json.data?.labelUrl) {
+        window.open(json.data.labelUrl, "_blank");
+      } else {
+        toast.error(json.message || "Failed to fetch shipping label");
+      }
+    } catch {
+      toast.error("Error retrieving shipping label");
+    }
+  };
+
   const handleUpdateStatus = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsUpdatingStatus(true);
@@ -91,7 +133,6 @@ export default function OrderDetailPage() {
 
       if (json.success) {
         toast.success("Order status & fulfillment updated!");
-        // Refresh details
         const refreshed = await fetch(`/api/admin/orders/${id}`).then((r) => r.json());
         if (refreshed.success) setData(refreshed.data);
       } else {
@@ -231,16 +272,33 @@ export default function OrderDetailPage() {
                     </div>
                     <div>
                       <p className="font-bold text-stone-900">{item.productName}</p>
-                      {item.productSku && <p className="text-[11px] font-mono text-stone-400">SKU: {item.productSku}</p>}
+                      <div className="flex items-center gap-2 text-[11px] text-stone-600 mt-0.5 flex-wrap">
+                        {item.size && (
+                          <span className="bg-stone-100 border border-stone-200 px-2 py-0.5 rounded-md font-bold text-stone-800">
+                            Size: {item.size}
+                          </span>
+                        )}
+                        {item.height && (
+                          <span className="bg-stone-100 border border-stone-200 px-2 py-0.5 rounded-md font-bold text-stone-800">
+                            Height: {item.height}
+                          </span>
+                        )}
+                        <span className="bg-stone-100 px-1.5 py-0.5 rounded font-semibold text-stone-700">
+                          Qty: {item.quantity}
+                        </span>
+                        {item.productSku && (
+                          <span className="font-mono text-stone-400">SKU: {item.productSku}</span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
                   <div className="text-right">
                     <p className="font-bold text-stone-900">
-                      ₹{item.unitPrice.toLocaleString("en-IN")} × {item.quantity}
+                      ₹{(item.unitPrice).toLocaleString("en-IN")} × {item.quantity}
                     </p>
                     <p className="text-stone-500 font-semibold mt-0.5">
-                      = ₹{item.totalPrice.toLocaleString("en-IN")}
+                      = ₹{(item.totalPrice).toLocaleString("en-IN")}
                     </p>
                   </div>
                 </div>
@@ -251,12 +309,12 @@ export default function OrderDetailPage() {
             <div className="mt-4 pt-4 border-t border-stone-200 space-y-2 text-xs">
               <div className="flex justify-between text-stone-600">
                 <span>Subtotal</span>
-                <span>₹{order.subtotal.toLocaleString("en-IN")}</span>
+                <span>₹{(order.subtotal).toLocaleString("en-IN")}</span>
               </div>
               {order.discount > 0 && (
                 <div className="flex justify-between text-emerald-600 font-semibold">
                   <span>Discount</span>
-                  <span>- ₹{order.discount.toLocaleString("en-IN")}</span>
+                  <span>- ₹{(order.discount).toLocaleString("en-IN")}</span>
                 </div>
               )}
               <div className="flex justify-between text-stone-600">
@@ -265,13 +323,85 @@ export default function OrderDetailPage() {
               </div>
               <div className="flex justify-between text-stone-900 font-bold text-sm pt-2 border-t border-stone-200">
                 <span>Grand Total</span>
-                <span>₹{order.total.toLocaleString("en-IN")}</span>
+                <span>₹{(order.total).toLocaleString("en-IN")}</span>
               </div>
             </div>
           </AdminCard>
 
           {/* Fulfillment & Courier Management */}
           <AdminCard title="Fulfillment & Dispatch Details" description="Courier service provider and shipment tracking number">
+            {/* Automated Delhivery Integration Operations */}
+            <div className="p-4 bg-stone-50 rounded-2xl border border-stone-200 space-y-3 mb-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-[#B67B5C]/10 text-[#B67B5C] flex items-center justify-center font-bold">
+                    <Truck size={16} />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-stone-900">Delhivery Courier Integration</h4>
+                    <p className="text-[11px] text-stone-500">Automated dispatch, waybill tracking, and label generation</p>
+                  </div>
+                </div>
+                {shipment?.trackingNumber && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                    AWB: {shipment.trackingNumber}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap pt-1">
+                {/* <AdminButton
+                  type="button"
+                  size="sm"
+                  variant="primary"
+                  onClick={() => setIsShipmentModalOpen(true)}
+                  disabled={Boolean(shipment?.trackingNumber)}
+                  className="text-xs flex items-center gap-1.5"
+                >
+                  <Package size={14} />
+                  <span>{shipment?.trackingNumber ? "Shipment Created" : "Create Delhivery Shipment"}</span>
+                </AdminButton> */}
+
+                <AdminButton
+                  type="button"
+                  size="sm"
+                  variant="primary"
+                  disabled
+                  className="text-xs flex items-center gap-1.5 cursor-not-allowed opacity-60"
+                >
+                  <Package size={14} />
+                  <span>Create Delhivery Shipment (Temporarily Disabled)</span>
+                </AdminButton>
+
+                {shipment?.trackingNumber && (
+                  <>
+                    <AdminButton
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={handleSyncDelhiveryStatus}
+                      isLoading={isSyncingShipment}
+                      className="text-xs flex items-center gap-1.5"
+                    >
+                      <Clock size={14} />
+                      <span>Sync Latest Status</span>
+                    </AdminButton>
+
+                    <AdminButton
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={handleDownloadLabel}
+                      className="text-xs flex items-center gap-1.5"
+                    >
+                      <Download size={14} />
+                      <span>Download Shipping Label</span>
+                    </AdminButton>
+                  </>
+                )}
+              </div>
+            </div>
+
             <form onSubmit={handleUpdateStatus} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-stone-700 mb-1">Update Order Status</label>
@@ -451,6 +581,14 @@ export default function OrderDetailPage() {
           </AdminCard>
         </div>
       </div>
+
+      {/* Shipment Creation Modal */}
+      <ShipmentCreateModal
+        isOpen={isShipmentModalOpen}
+        onClose={() => setIsShipmentModalOpen(false)}
+        orderData={data}
+        onSuccess={handleShipmentSuccess}
+      />
     </div>
   );
 }

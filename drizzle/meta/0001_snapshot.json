@@ -1,6 +1,6 @@
 {
-  "id": "a3cddd46-3777-4c11-902b-ce98bace6b5b",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "dfed6ed0-b20e-4d6e-82aa-a8b1cb298b6c",
+  "prevId": "a3cddd46-3777-4c11-902b-ce98bace6b5b",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -3501,6 +3501,133 @@
         }
       },
       "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.delhivery_settings": {
+      "name": "delhivery_settings",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "pickup_name": {
+          "name": "pickup_name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pickup_phone": {
+          "name": "pickup_phone",
+          "type": "varchar(30)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pickup_email": {
+          "name": "pickup_email",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pickup_address_line1": {
+          "name": "pickup_address_line1",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pickup_address_line2": {
+          "name": "pickup_address_line2",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pickup_city": {
+          "name": "pickup_city",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pickup_state": {
+          "name": "pickup_state",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pickup_pincode": {
+          "name": "pickup_pincode",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pickup_country": {
+          "name": "pickup_country",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'India'"
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "delhivery_settings_active_idx": {
+          "name": "delhivery_settings_active_idx",
+          "columns": [
+            {
+              "expression": "is_active",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delhivery_settings_pincode_idx": {
+          "name": "delhivery_settings_pincode_idx",
+          "columns": [
+            {
+              "expression": "pickup_pincode",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
