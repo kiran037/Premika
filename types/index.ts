@@ -24,6 +24,14 @@ export interface ComboItemConfig {
   heights?: HeightOption[];
 }
 
+export interface Category {
+  id: string;
+  name: string;
+  slug?: string;
+  description?: string | null;
+  imageUrl?: string | null;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -41,7 +49,10 @@ export interface Product {
   isCombo?: boolean;
   comboItems?: ComboItemConfig[];
   featured?: boolean;
+  isFeatured?: boolean;
   newArrival?: boolean;
+  createdAt?: string;
+  categoryId?: string;
 }
 
 export interface DiscountedPriceResult {

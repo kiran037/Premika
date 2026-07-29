@@ -42,6 +42,10 @@ export default function MainNavbar({ storeName, logo }: MainNavbarProps) {
       link: "/",
     },
     {
+      name: "Shop",
+      link: "/shop",
+    },
+    {
       name: "Track Order",
       link: "/track-order",
     },
