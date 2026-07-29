@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PaymentService } from "@/services/payment.service";
+import { recordCouponUsage } from "@/lib/coupons/validate-coupon";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,14 @@ export async function POST(req: NextRequest) {
         { message: result.message || "Payment verification failed", isOk: false },
         { status: 400 }
       );
+    }
+
+    // Record coupon usage ONLY after successful payment verification
+    const couponCodeOrId = payload.couponCode || payload.couponId;
+    if (couponCodeOrId) {
+      await recordCouponUsage(couponCodeOrId, payload.customerInfo?.id || payload.customerId).catch((err) => {
+        console.error("Non-fatal error recording coupon usage:", err);
+      });
     }
 
     return NextResponse.json(

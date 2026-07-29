@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { NavItem } from "@/types";
+import { usePathname } from "next/navigation";
 
 interface NavbarProps {
   children: React.ReactNode;
@@ -17,19 +18,19 @@ export const Navbar: React.FC<NavbarProps> = ({ children, className }) => {
 
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 100) {
+      if (window.scrollY > 80) {
         setVisible(true);
       } else {
         setVisible(false);
       }
     };
 
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   return (
-    <div className={cn("sticky inset-x-0 top-1 z-40 w-full", className)}>
+    <div className={cn("sticky inset-x-0 top-1 z-40 w-full px-2 sm:px-4", className)}>
       {React.Children.map(children, (child) =>
         React.isValidElement(child)
           ? React.cloneElement(child as React.ReactElement<any>, { visible })
@@ -49,18 +50,16 @@ export const NavBody: React.FC<NavBodyProps> = ({ children, className, visible }
   return (
     <div
       style={{
-        minWidth: "800px",
-        backdropFilter: visible ? "blur(10px)" : "none",
+        backdropFilter: visible ? "blur(12px)" : "none",
         boxShadow: visible
-          ? "0 0 24px rgba(34, 42, 53, 0.06), 0 1px 1px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(34, 42, 53, 0.04), 0 0 4px rgba(34, 42, 53, 0.08), 0 16px 68px rgba(47, 48, 55, 0.05), 0 1px 0 rgba(255, 255, 255, 0.1) inset"
+          ? "0 0 24px rgba(34, 42, 53, 0.08), 0 1px 1px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(255, 255, 255, 0.1), 0 16px 48px rgba(0, 0, 0, 0.15)"
           : "none",
-        width: visible ? "40%" : "100%",
-        transform: visible ? "translateY(20px)" : "translateY(0px)",
+        transform: visible ? "translateY(12px)" : "translateY(0px)",
         transition: "all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
       }}
       className={cn(
-        "relative z-[60] mx-auto hidden w-full max-w-7xl flex-row items-center justify-between self-start rounded-full bg-foreground px-4 py-2 lg:flex dark:bg-transparent transition-all duration-400 ease-out",
-        visible && "bg-foreground dark:bg-neutral-950/80",
+        "relative z-[60] mx-auto hidden w-full flex-row items-center justify-between self-start rounded-full bg-foreground px-6 py-2.5 lg:flex transition-all duration-400 ease-out border border-transparent",
+        visible ? "max-w-5xl bg-foreground/95 border-white/10" : "max-w-7xl bg-foreground",
         className
       )}
     >
@@ -76,29 +75,44 @@ interface NavItemsProps {
 }
 
 export const NavItems: React.FC<NavItemsProps> = ({ items, className, onItemClick }) => {
-  const [, setHovered] = useState<number | null>(null);
+  const pathname = usePathname();
 
   return (
     <div
-      onMouseLeave={() => setHovered(null)}
       className={cn(
-        "absolute inset-0 hidden flex-1 flex-row items-center justify-center space-x-2 text-sm font-medium text-zinc-600 transition duration-200 hover:text-zinc-800 lg:flex lg:space-x-2",
+        "hidden flex-1 flex-row items-center justify-center space-x-1 sm:space-x-2 text-sm font-bold text-background lg:flex mx-4 min-w-0",
         className
       )}
     >
-      {items.map((item, idx) => (
-        <Link
-          key={`link-${idx}`}
-          href={item.link}
-          onMouseEnter={() => setHovered(idx)}
-          onClick={onItemClick}
-          className="relative px-4 py-2 text-background pr-6"
-        >
-          <div className="py-2 px-4 inset-0 h-full w-full rounded-md hover:bg-background hover:text-foreground dark:bg-neutral-800 transition-all duration-200 animate-in fade-in-0">
-            <span className="relative z-20 font-bold">{item.name}</span>
-          </div>
-        </Link>
-      ))}
+      {items.map((item, idx) => {
+        const isActive =
+          item.link === "/"
+            ? pathname === "/"
+            : pathname?.startsWith(item.link);
+
+        return (
+          <Link
+            key={`link-${idx}`}
+            href={item.link}
+            onClick={onItemClick}
+            className="relative px-3 py-1.5 transition-colors group"
+          >
+            <span
+              className={cn(
+                "relative z-20 font-bold transition-all duration-200",
+                isActive
+                  ? "text-white font-extrabold"
+                  : "text-background/85 hover:text-white"
+              )}
+            >
+              {item.name}
+            </span>
+            {isActive && (
+              <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-[#E0BCA2] rounded-full transition-all duration-300" />
+            )}
+          </Link>
+        );
+      })}
     </div>
   );
 };
@@ -113,24 +127,22 @@ export const MobileNav: React.FC<MobileNavProps> = ({ children, className, visib
   return (
     <div
       style={{
-        backdropFilter: visible ? "blur(10px)" : "none",
         boxShadow: visible
-          ? "0 0 24px rgba(34, 42, 53, 0.06), 0 1px 1px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(34, 42, 53, 0.04), 0 0 4px rgba(34, 42, 53, 0.08), 0 16px 68px rgba(47, 48, 55, 0.05), 0 1px 0 rgba(255, 255, 255, 0.1) inset"
+          ? "0 10px 25px -5px rgba(0, 0, 0, 0.15)"
           : "none",
-        width: visible ? "90%" : "100%",
-        paddingRight: visible ? "12px" : "0px",
-        paddingLeft: visible ? "12px" : "0px",
-        borderRadius: "20px",
-        transform: visible ? "translateY(20px)" : "translateY(0px)",
+        transform: visible ? "translateY(8px)" : "translateY(0px)",
         transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
       }}
       className={cn(
-        "relative z-50 mx-auto flex w-full flex-col items-center justify-between bg-foreground px-0 py-2 lg:hidden",
-        visible && "bg-foreground dark:bg-neutral-950/80",
+        "relative z-50 mx-auto flex w-full flex-row items-center justify-between rounded-full bg-foreground px-4 py-2 lg:hidden transition-all duration-300 border border-transparent",
         className
       )}
     >
-      {children}
+      {React.Children.map(children, (child) =>
+        React.isValidElement(child)
+          ? React.cloneElement(child as React.ReactElement<any>, { visible })
+          : child
+      )}
     </div>
   );
 };
@@ -144,7 +156,7 @@ export const MobileNavHeader: React.FC<MobileNavHeaderProps> = ({ children, clas
   return (
     <div
       className={cn(
-        "flex w-full flex-row items-center justify-between",
+        "relative z-20 flex w-full flex-row items-center justify-between px-1",
         className
       )}
     >
@@ -158,14 +170,20 @@ interface MobileNavMenuProps {
   className?: string;
   isOpen: boolean;
   onClose?: () => void;
+  visible?: boolean;
 }
 
 export const MobileNavMenu: React.FC<MobileNavMenuProps> = ({ children, className, isOpen }) => {
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Mobile Navigation Menu"
       className={cn(
-        "absolute inset-x-0 top-16 z-50 flex w-full flex-col items-start justify-start gap-4 rounded-lg bg-background px-4 py-8 shadow-[0_0_24px_rgba(34,_42,_53,_0.06),_0_1px_1px_rgba(0,_0,_0,_0.05),_0_0_0_1px_rgba(34,_42,_53,_0.04),_0_0_4px_rgba(34,_42,_53,_0.08),_0_16px_68px_rgba(47,_48,_55,_0.05),_0_1px_0_rgba(255,_255,_255,_0.1)_inset] dark:bg-neutral-950 transition-all duration-300",
-        isOpen ? "opacity-100 visible" : "opacity-0 invisible",
+        "absolute inset-x-0 top-[calc(100%+6px)] z-10 flex w-full flex-col items-start justify-start gap-3 rounded-3xl bg-foreground p-6 text-background shadow-2xl transition-all duration-300 ease-in-out origin-top border border-transparent",
+        isOpen
+          ? "opacity-100 translate-y-0 visible pointer-events-auto scale-100"
+          : "opacity-0 -translate-y-2 invisible pointer-events-none scale-95",
         className
       )}
     >
@@ -181,7 +199,12 @@ interface MobileNavToggleProps {
 
 export const MobileNavToggle: React.FC<MobileNavToggleProps> = ({ isOpen, onClick }) => {
   return (
-    <button onClick={onClick} className="p-1 mr-3">
+    <button
+      onClick={onClick}
+      aria-label={isOpen ? "Close menu" : "Open menu"}
+      aria-expanded={isOpen}
+      className="p-1 mr-1 text-background hover:opacity-80 transition-opacity"
+    >
       {isOpen ? (
         <X className="h-6 w-6 text-background dark:text-white" />
       ) : (
@@ -191,20 +214,39 @@ export const MobileNavToggle: React.FC<MobileNavToggleProps> = ({ isOpen, onClic
   );
 };
 
-export const NavbarLogo: React.FC = () => {
+export interface NavbarLogoProps {
+  storeName?: string;
+  logo?: string | null;
+  className?: string;
+}
+
+export const NavbarLogo: React.FC<NavbarLogoProps> = ({
+  storeName = "Premika",
+  logo = null,
+  className,
+}) => {
+  const displayName = storeName && storeName.trim() ? storeName : "Premika";
+  const logoSrc = logo && logo.trim() ? logo : "/logo.png";
+
   return (
     <Link
       href="/"
-      className="relative z-20 mr-4 flex items-center space-x-2 px-2 py-1 text-sm font-normal text-black"
+      className={cn(
+        "relative z-20 flex-shrink-0 flex items-center space-x-2 px-2 py-1 text-sm font-normal text-background hover:opacity-90 transition-opacity",
+        className
+      )}
     >
       <Image
-        src="/logo.png"
-        alt="logo"
+        src={logoSrc}
+        alt={displayName}
         width={30}
         height={30}
-        className="rounded"
+        className="rounded object-contain"
+        priority
       />
-      <span className="font-bold text-background text-md md:text-lg dark:text-white">Premika</span>
+      <span className="font-bold text-background text-md md:text-lg dark:text-white truncate max-w-[180px]">
+        {displayName}
+      </span>
     </Link>
   );
 };

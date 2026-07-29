@@ -112,9 +112,13 @@ export default function Home() {
     return total + item.price * (item.quantity || 1);
   }, 0);
 
+  const couponCode = (cart as any).couponCode || (cart as any).appliedCoupon?.couponCode || undefined;
+  const couponId = (cart as any).couponId || (cart as any).appliedCoupon?.couponId || undefined;
+  const couponDiscount = (cart as any).discountAmount || (cart as any).appliedCoupon?.discountAmount || 0;
+
   // No shipping cost - free shipping for all orders
   const shippingCost = 0;
-  const finalAmount = Math.floor(totalAmount);
+  const finalAmount = Math.max(0, Math.floor(totalAmount - couponDiscount + shippingCost));
 
   useEffect(() => {
     // Check if cart is empty and redirect
@@ -151,8 +155,10 @@ export default function Home() {
           amount: finalAmount * 100, // Amount in paise
           customerInfo,
           cartItems: cart.items,
+          couponCode,
           orderSummary: {
             subtotal: totalAmount,
+            discount: couponDiscount,
             shipping: shippingCost,
             total: finalAmount,
             itemCount: cart.items.length,
@@ -201,8 +207,11 @@ export default function Home() {
                 razorpaySignature: response.razorpay_signature,
                 customerInfo,
                 cartItems: cart.items,
+                couponCode,
+                couponId,
                 orderSummary: {
                   subtotal: totalAmount,
+                  discount: couponDiscount,
                   shipping: shippingCost,
                   total: finalAmount,
                   itemCount: cart.items.length,
@@ -888,6 +897,17 @@ export default function Home() {
                             ₹{totalAmount.toFixed(2)}
                           </span>
                         </div>
+
+                        {couponDiscount > 0 && (
+                          <div className="flex justify-between items-center text-green-600">
+                            <span className="font-medium text-sm sm:text-base">
+                              Coupon Discount ({couponCode}):
+                            </span>
+                            <span className="text-base sm:text-lg font-semibold break-words">
+                              - ₹{couponDiscount.toFixed(2)}
+                            </span>
+                          </div>
+                        )}
 
                         <div className="flex justify-between items-center text-muted-foreground">
                           <div className="flex items-center space-x-2">

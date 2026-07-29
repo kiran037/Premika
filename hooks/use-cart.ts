@@ -8,10 +8,84 @@ import {
   sanitizeCartState,
 } from "@/lib/cart/cart-utils";
 
-const useCart = create<CartStore>()(
+export interface AppliedCouponInfo {
+  couponId?: string;
+  couponCode: string;
+  discountType: "percentage" | "fixed" | string;
+  discountValue: number;
+  discountAmount: number;
+}
+
+export interface CouponStoreState {
+  appliedCoupon: AppliedCouponInfo | null;
+  couponId: string | null;
+  couponCode: string | null;
+  discountType: string | null;
+  discountValue: number | null;
+  discountAmount: number | null;
+
+  applyCoupon: (couponData: AppliedCouponInfo) => void;
+  removeCoupon: () => void;
+}
+
+export type FullCartStore = CartStore & CouponStoreState;
+
+const recalculateDiscount = (
+  items: CartItem[],
+  currentCoupon: AppliedCouponInfo | null
+): AppliedCouponInfo | null => {
+  if (!currentCoupon) return null;
+  const newSubtotal = items.reduce(
+    (total, item) => total + (item.price || 0) * (item.quantity || 1),
+    0
+  );
+  if (newSubtotal <= 0) return null;
+
+  let newDiscountAmount = 0;
+  if (currentCoupon.discountType === "percentage") {
+    newDiscountAmount = Math.floor((newSubtotal * currentCoupon.discountValue) / 100);
+  } else {
+    newDiscountAmount = Math.min(newSubtotal, currentCoupon.discountValue);
+  }
+
+  return {
+    ...currentCoupon,
+    discountAmount: newDiscountAmount,
+  };
+};
+
+const useCart = create<FullCartStore>()(
   persist(
     (set, get) => ({
       items: [],
+      appliedCoupon: null,
+      couponId: null,
+      couponCode: null,
+      discountType: null,
+      discountValue: null,
+      discountAmount: null,
+
+      applyCoupon: (couponData) => {
+        set({
+          appliedCoupon: couponData,
+          couponId: couponData.couponId || null,
+          couponCode: couponData.couponCode,
+          discountType: couponData.discountType,
+          discountValue: couponData.discountValue,
+          discountAmount: couponData.discountAmount,
+        });
+      },
+
+      removeCoupon: () => {
+        set({
+          appliedCoupon: null,
+          couponId: null,
+          couponCode: null,
+          discountType: null,
+          discountValue: null,
+          discountAmount: null,
+        });
+      },
 
       addItem: (data) => {
         const currentItems = get().items;
@@ -44,9 +118,10 @@ const useCart = create<CartStore>()(
         });
 
         const addQty = Math.max(1, data.quantity || 1);
+        let updatedItems: CartItem[];
 
         if (existingIndex !== -1) {
-          const updatedItems = [...currentItems];
+          updatedItems = [...currentItems];
           const existingItem = updatedItems[existingIndex];
           const newQuantity = (existingItem.quantity || 1) + addQty;
 
@@ -54,8 +129,6 @@ const useCart = create<CartStore>()(
             ...existingItem,
             quantity: newQuantity,
           };
-
-          set({ items: updatedItems });
 
           if (data.isCombo) {
             toast.success(`Updated quantity to ${newQuantity} for ${data.name}`);
@@ -74,7 +147,7 @@ const useCart = create<CartStore>()(
             images: Array.isArray(data.images) && data.images.length > 0 ? data.images : ["/placeholder.svg"],
           };
 
-          set({ items: [...currentItems, newItem] });
+          updatedItems = [...currentItems, newItem];
 
           if (data.isCombo) {
             toast.success(`${data.name} added to cart`);
@@ -84,6 +157,18 @@ const useCart = create<CartStore>()(
             toast.success(`${data.name}${sizeInfo}${heightInfo} added to cart`);
           }
         }
+
+        const updatedCoupon = recalculateDiscount(updatedItems, get().appliedCoupon);
+
+        set({
+          items: updatedItems,
+          appliedCoupon: updatedCoupon,
+          couponId: updatedCoupon?.couponId || null,
+          couponCode: updatedCoupon?.couponCode || null,
+          discountType: updatedCoupon?.discountType || null,
+          discountValue: updatedCoupon?.discountValue || null,
+          discountAmount: updatedCoupon?.discountAmount || null,
+        });
 
         return true;
       },
@@ -114,7 +199,18 @@ const useCart = create<CartStore>()(
           return true;
         });
 
-        set({ items: updatedItems });
+        const updatedCoupon = recalculateDiscount(updatedItems, get().appliedCoupon);
+
+        set({
+          items: updatedItems,
+          appliedCoupon: updatedCoupon,
+          couponId: updatedCoupon?.couponId || null,
+          couponCode: updatedCoupon?.couponCode || null,
+          discountType: updatedCoupon?.discountType || null,
+          discountValue: updatedCoupon?.discountValue || null,
+          discountAmount: updatedCoupon?.discountAmount || null,
+        });
+
         toast.success("Item removed from cart");
       },
 
@@ -145,12 +241,31 @@ const useCart = create<CartStore>()(
           return isTarget ? { ...item, quantity: targetQuantity } : item;
         });
 
-        set({ items: updatedItems });
+        const updatedCoupon = recalculateDiscount(updatedItems, get().appliedCoupon);
+
+        set({
+          items: updatedItems,
+          appliedCoupon: updatedCoupon,
+          couponId: updatedCoupon?.couponId || null,
+          couponCode: updatedCoupon?.couponCode || null,
+          discountType: updatedCoupon?.discountType || null,
+          discountValue: updatedCoupon?.discountValue || null,
+          discountAmount: updatedCoupon?.discountAmount || null,
+        });
+
         toast.success(`Quantity updated to ${targetQuantity}`);
       },
 
       removeAll: () => {
-        set({ items: [] });
+        set({
+          items: [],
+          appliedCoupon: null,
+          couponId: null,
+          couponCode: null,
+          discountType: null,
+          discountValue: null,
+          discountAmount: null,
+        });
         toast.success("All items removed from cart");
       },
 

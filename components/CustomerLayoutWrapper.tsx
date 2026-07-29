@@ -5,11 +5,14 @@ import { Footer } from "@/components/footer";
 import ModalProvider from "@/providers/modal-provider";
 import ToastProvider from "@/providers/toast-provider";
 import MainNavbar from "@/components/resize-navbar";
+import type { StoreInformation } from "@/lib/store/get-store-information";
 
 export default function CustomerLayoutWrapper({
   children,
+  storeInfo,
 }: {
   children: React.ReactNode;
+  storeInfo?: StoreInformation;
 }) {
   const pathname = usePathname();
   const isAdminRoute = pathname?.startsWith("/admin");
@@ -31,7 +34,7 @@ export default function CustomerLayoutWrapper({
         <ToastProvider />
         {children}
       </div>
-      <Footer />
+      <Footer storeInfo={storeInfo} />
     </div>
   );
 }

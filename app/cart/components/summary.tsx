@@ -1,6 +1,5 @@
 "use client";
 
-import axios from "axios";
 import { useState, Suspense } from "react";
 import { toast } from "react-hot-toast";
 import {
@@ -15,16 +14,11 @@ import Currency from "@/components/ui/currency";
 import useCart from "@/hooks/use-cart";
 import Link from "next/link";
 
-interface AppliedCoupon {
-  code: string;
-  discount: number;
-}
-
 const SummaryContent = () => {
-  const items = useCart((state) => state.items);
-  const [isLoading, setIsLoading] = useState(false);
-  const [couponCode, setCouponCode] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
+  const cart = useCart();
+  const items = cart.items;
+  const [couponInputCode, setCouponInputCode] = useState("");
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
 
   // Calculate pricing
   const subtotal = items.reduce((total, item: any) => {
@@ -36,43 +30,74 @@ const SummaryContent = () => {
 
   // Calculate sale discount
   const saleDiscount = items.reduce((total, item: any) => {
-    if (item.isOnSale && item.originalPrice) {
+    if (item.isOnSale && item.originalPrice && item.originalPrice > item.price) {
       const discount = (item.originalPrice - item.price) * (item.quantity || 1);
       return total + discount;
     }
     return total;
   }, 0);
 
-  const couponDiscount = appliedCoupon
-    ? (subtotal * appliedCoupon.discount) / 100
-    : 0;
+  const cartSubtotal = items.reduce(
+    (total, item) => total + (item.price || 0) * (item.quantity || 1),
+    0
+  );
+
+  const couponDiscount = cart.discountAmount || (cart.appliedCoupon ? cart.appliedCoupon.discountAmount : 0);
   const totalDiscount = saleDiscount + couponDiscount;
+  const totalPrice = Math.max(0, Math.floor(cartSubtotal - couponDiscount));
 
-  const totalPrice = Math.floor(subtotal - totalDiscount);
+  const handleApplyCoupon = async () => {
+    if (!couponInputCode.trim()) {
+      toast.error("Please enter a coupon code");
+      return;
+    }
 
-  const applyCoupon = () => {
-    const validCoupons: Record<string, number> = {};
+    setIsApplyingCoupon(true);
+    try {
+      const res = await fetch("/api/coupons/validate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          code: couponInputCode.trim(),
+          subtotal: cartSubtotal,
+        }),
+      });
 
-    if (validCoupons[couponCode.toUpperCase()]) {
-      const discount = validCoupons[couponCode.toUpperCase()];
-      setAppliedCoupon({ code: couponCode.toUpperCase(), discount });
-      toast.success(
-        `Coupon ${couponCode.toUpperCase()} applied! ${discount}% off`
-      );
-      setCouponCode("");
-    } else {
-      toast.error("Invalid coupon code");
+      const data = await res.json();
+
+      if (data.valid) {
+        cart.applyCoupon({
+          couponId: data.couponId,
+          couponCode: data.couponCode,
+          discountType: data.discountType,
+          discountValue: data.discountValue,
+          discountAmount: data.discountAmount,
+        });
+        toast.success(data.message || `Coupon ${data.couponCode} applied successfully!`);
+        setCouponInputCode("");
+      } else {
+        toast.error(data.error || data.message || "Invalid coupon code");
+      }
+    } catch (err) {
+      console.error("Error validating coupon:", err);
+      toast.error("Failed to validate coupon");
+    } finally {
+      setIsApplyingCoupon(false);
     }
   };
 
-  const removeCoupon = () => {
-    setAppliedCoupon(null);
+  const handleRemoveCoupon = () => {
+    cart.removeCoupon();
     toast.success("Coupon removed");
   };
 
   if (items.length === 0) {
     return null;
   }
+
+  const appliedCoupon = cart.appliedCoupon;
 
   return (
     <div className="mt-4 sm:mt-6 lg:mt-0">
@@ -97,7 +122,7 @@ const SummaryContent = () => {
                 : "items"}
               )
             </span>
-            <Currency value={subtotal} />
+            <Currency value={cartSubtotal} />
           </div>
 
           {/* Sale Discount */}
@@ -106,7 +131,7 @@ const SummaryContent = () => {
               <div className="flex items-center space-x-1">
                 <Percent size={12} className="sm:w-4 sm:h-4 flex-shrink-0" />
                 <span className="text-xs sm:text-sm">
-                  Sale Discount (10% OFF)
+                  Sale Discount
                 </span>
               </div>
               <span className="text-sm sm:text-base flex items-center">
@@ -121,11 +146,17 @@ const SummaryContent = () => {
               <div className="flex items-center space-x-1">
                 <Tag size={14} className="sm:w-4 sm:h-4" />
                 <span>
-                  Coupon {appliedCoupon.code} ({appliedCoupon.discount}%)
+                  Coupon {appliedCoupon.couponCode} (
+                  {appliedCoupon.discountType === "percentage"
+                    ? `${appliedCoupon.discountValue}% OFF`
+                    : `₹${appliedCoupon.discountValue} OFF`}
+                  )
                 </span>
                 <button
-                  onClick={removeCoupon}
-                  className="text-red-500 hover:text-red-700 ml-1 sm:ml-2 text-lg leading-none"
+                  onClick={handleRemoveCoupon}
+                  aria-label="Remove coupon"
+                  className="text-red-500 hover:text-red-700 ml-1 sm:ml-2 text-lg leading-none p-1 min-w-[28px] min-h-[28px] inline-flex items-center justify-center rounded focus:outline-none focus:ring-1 focus:ring-red-500"
+                  title="Remove Coupon"
                 >
                   ×
                 </button>
@@ -163,9 +194,8 @@ const SummaryContent = () => {
         <Link href="/checkout" className="block">
           <Button
             className="w-full mb-3 sm:mb-4 py-2 sm:py-3 text-sm sm:text-base md:text-lg bg-foreground text-background hover:bg-secondary transition-colors"
-            disabled={isLoading}
           >
-            {isLoading ? "Processing..." : "Proceed to Checkout"}
+            Proceed to Checkout
           </Button>
         </Link>
 
@@ -187,55 +217,31 @@ const SummaryContent = () => {
             <input
               type="text"
               placeholder="Enter promo code"
-              value={couponCode}
-              onChange={(e) => setCouponCode(e.target.value)}
-              className="flex-1 px-2 sm:px-3 py-2 text-xs sm:text-sm border border-background rounded-md focus:outline-none focus:ring-2 focus:ring-foreground focus:border-transparent"
+              value={couponInputCode}
+              onChange={(e) => setCouponInputCode(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleApplyCoupon();
+                }
+              }}
+              className="flex-1 px-2 sm:px-3 py-2 text-xs sm:text-sm border border-background rounded-md focus:outline-none focus:ring-2 focus:ring-foreground focus:border-transparent uppercase"
             />
             <Button
-              onClick={applyCoupon}
+              onClick={handleApplyCoupon}
               variant="outline"
               size="sm"
-              disabled={!couponCode.trim()}
+              disabled={!couponInputCode.trim() || isApplyingCoupon}
               className="hover:bg-primary hover:text-background transition-colors border border-foreground text-xs sm:text-sm px-3 py-2 w-full xs:w-auto"
             >
-              Apply
+              {isApplyingCoupon ? "Applying..." : "Apply"}
             </Button>
           </div>
         </div>
       </div>
 
       {/* Savings Summary */}
-      {totalDiscount > 0 && (
-        <div className="mt-4 sm:mt-6 bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4 md:p-5 lg:p-6">
-          <h3 className="text-sm sm:text-base md:text-lg font-medium text-green-900 mb-2">
-            💰 Your Savings
-          </h3>
-          <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm">
-            {saleDiscount > 0 && (
-              <div className="flex justify-between text-green-800">
-                <span>Sale Discount (10% OFF):</span>
-                <span className="flex items-center">
-                  - <Currency value={saleDiscount} />
-                </span>
-              </div>
-            )}
-            {appliedCoupon && (
-              <div className="flex justify-between text-green-800">
-                <span>Coupon {appliedCoupon.code}:</span>
-                <span className="flex items-center">
-                  - <Currency value={couponDiscount} />
-                </span>
-              </div>
-            )}
-            <div className="border-t border-green-200 pt-1 sm:pt-2 flex justify-between font-medium text-green-900 text-sm sm:text-base">
-              <span>Total Saved:</span>
-              <span className="flex items-center">
-                - <Currency value={totalDiscount} />
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 };

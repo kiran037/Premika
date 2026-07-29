@@ -1,35 +1,33 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
 import {
   Mail,
   Phone,
   Clock,
   MessageCircle,
   MapPin,
-  Send,
   HeadphonesIcon,
-  Users,
-  Package,
 } from "lucide-react";
+import { getStoreInformation } from "@/lib/store/get-store-information";
 
-export function generateMetadata() {
+export async function generateMetadata() {
+  const storeInfo = await getStoreInformation();
+
   return {
-    title: "Contact Us - Premika Store",
+    title: `Contact Us - ${storeInfo.storeName}`,
     description:
-      "Get in touch with Premika Store for any questions about our products, orders, or policies. Email support available with 24-48 hour response time. We&apos;re here to help!",
+      `Get in touch with ${storeInfo.storeName} for any questions about our products, orders, or policies. Email support available with 24-48 hour response time. We're here to help!`,
     keywords:
-      "premika store contact, customer support, email support, contact premika, fashion store contact, women clothing support, order queries, product questions",
-    authors: [{ name: "Premika Store" }],
-    creator: "Premika Store",
-    publisher: "Premika Store",
+      `${storeInfo.storeName.toLowerCase()} contact, customer support, email support, contact ${storeInfo.storeName.toLowerCase()}, fashion store contact, women clothing support, order queries, product questions`,
+    authors: [{ name: storeInfo.storeName }],
+    creator: storeInfo.storeName,
+    publisher: storeInfo.storeName,
     formatDetection: {
       email: false,
       address: false,
       telephone: false,
     },
     metadataBase: new URL("https://premika.shop"),
-    applicationName: "Premika Store",
+    applicationName: storeInfo.storeName,
     referrer: "origin-when-cross-origin",
     verification: {
       google: "google-site-verification-code",
@@ -51,34 +49,34 @@ export function generateMetadata() {
       type: "website",
       locale: "en_IN",
       url: "https://premika.shop/contact-us",
-      siteName: "Premika Store",
-      title: "Contact Us - Premika Store",
+      siteName: storeInfo.storeName,
+      title: `Contact Us - ${storeInfo.storeName}`,
       description:
-        "Get in touch with Premika Store for any questions about our products, orders, or policies. Email support available with 24-48 hour response time. We&apos;re here to help!",
+        `Get in touch with ${storeInfo.storeName} for any questions about our products, orders, or policies. Email support available with 24-48 hour response time. We're here to help!`,
       images: [
         {
           url: "https://premika.shop/logo.png",
           width: 1200,
           height: 630,
-          alt: "Premika Store Contact Us",
+          alt: `${storeInfo.storeName} Contact Us`,
           type: "image/png",
         },
       ],
-      emails: ["premika.shop@gmail.com"],
-      phoneNumbers: ["+919599215195"],
-      countryName: "India",
+      emails: [storeInfo.supportEmail],
+      phoneNumbers: [storeInfo.supportPhone],
+      countryName: storeInfo.country || "India",
     },
     twitter: {
       card: "summary_large_image",
       site: "@premika_store",
       creator: "@premika_store",
-      title: "Contact Us - Premika Store",
+      title: `Contact Us - ${storeInfo.storeName}`,
       description:
-        "Get in touch with Premika Store for any questions about our products, orders, or policies. Email support available with 24-48 hour response time. We&apos;re here to help!",
+        `Get in touch with ${storeInfo.storeName} for any questions about our products, orders, or policies. Email support available with 24-48 hour response time. We're here to help!`,
       images: [
         {
           url: "https://premika.shop/logo.png",
-          alt: "Premika Store Contact Us",
+          alt: `${storeInfo.storeName} Contact Us`,
         },
       ],
     },
@@ -92,9 +90,9 @@ export function generateMetadata() {
     category: "E-commerce",
     classification: "Customer Support",
     other: {
-      "contact:email": "premika.shop@gmail.com",
-      "contact:phone": "+919599215195",
-      "business:hours": "Monday-Friday 9AM-6PM IST",
+      "contact:email": storeInfo.supportEmail,
+      "contact:phone": storeInfo.supportPhone,
+      "business:hours": storeInfo.businessHours,
       "support:response_time": "24-48 hours",
     },
   };
@@ -112,7 +110,9 @@ export function generateViewport() {
   };
 }
 
-export default function ContactUs() {
+export default async function ContactUs() {
+  const storeInfo = await getStoreInformation();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-tertiary/10">
       {/* Header */}
@@ -137,7 +137,7 @@ export default function ContactUs() {
         <Card className="border-l-4 border-l-primary border-primary shadow-lg bg-[#E0BCA2]">
           <CardContent className="pt-6">
             <p className="text-lg leading-relaxed text-secondary">
-              At <span className="font-semibold text-primary">Premika</span>, we
+              At <span className="font-semibold text-primary">{storeInfo.storeName}</span>, we
               value your questions and feedback. Whether you need help with your
               order, have product inquiries, or need assistance with our
               policies, our dedicated support team is ready to assist you.
@@ -169,7 +169,7 @@ export default function ContactUs() {
                           Email Address
                         </p>
                         <p className="text-lg font-semibold text-primary">
-                          premika.shop@gmail.com
+                          {storeInfo.supportEmail}
                         </p>
                       </div>
                     </div>
@@ -208,10 +208,10 @@ export default function ContactUs() {
                         </p>
                         <p className="text-lg font-semibold text-primary">
                           <a
-                            href="tel:+919599215195"
+                            href={`tel:${storeInfo.supportPhone.replace(/\s+/g, "")}`}
                             className="hover:text-secondary transition-colors"
                           >
-                            (+91) 9599215195
+                            {storeInfo.supportPhone}
                           </a>
                         </p>
                       </div>
@@ -223,7 +223,7 @@ export default function ContactUs() {
                           Available Hours
                         </p>
                         <p className="text-secondary">
-                          9 AM - 6 PM IST (Mon-Fri)
+                          {storeInfo.businessHours}
                         </p>
                       </div>
                     </div>
@@ -367,13 +367,13 @@ export default function ContactUs() {
                 <div className="space-y-4">
                   <div className="bg-tertiary/10 border border-[#B67B5C] rounded-lg p-4">
                     <h4 className="font-semibold text-lg mb-3 text-secondary">
-                      Premika Store
+                      {storeInfo.storeName}
                     </h4>
                     <div className="space-y-2 text-secondary">
-                      <p>🌐 Online Store Based in India</p>
-                      <p>📧 premika.shop@gmail.com</p>
-                      <p>� (+91) 9599215195</p>
-                      <p>�💝 Handpicked Women&apos;s Fashion</p>
+                      <p>🌐 {storeInfo.formattedAddress}</p>
+                      <p>📧 {storeInfo.supportEmail}</p>
+                      <p>📞 {storeInfo.supportPhone}</p>
+                      <p>🛍️ Handpicked Women&apos;s Fashion</p>
                     </div>
                   </div>
                   <div className="bg-muted/30 border border-primary rounded-lg p-3">
@@ -463,7 +463,7 @@ export default function ContactUs() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-2 text-primary font-semibold text-lg sm:text-xl">
               <span>Thank you for choosing</span>
               <span className="bg-primary text-primary-foreground px-3 py-1 rounded-lg inline-block">
-                Premika!
+                {storeInfo.storeName}!
               </span>
             </div>
             <p className="text-sm text-foreground/50 mt-4">

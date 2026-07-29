@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PaymentService } from "@/services/payment.service";
+import { validateCoupon } from "@/lib/coupons/validate-coupon";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,25 @@ export async function POST(req: NextRequest) {
         items: body.cartItems || [],
         couponCode: body.couponCode,
       };
+    }
+
+    // Server-side revalidation of coupon if provided
+    if (checkoutInput.couponCode && typeof checkoutInput.couponCode === "string" && checkoutInput.couponCode.trim()) {
+      let serverSubtotal = 0;
+      for (const item of checkoutInput.items) {
+        serverSubtotal += Number(item.price || 0) * (item.quantity || 1);
+      }
+
+      const validation = await validateCoupon(checkoutInput.couponCode, serverSubtotal);
+      if (!validation.valid) {
+        return NextResponse.json(
+          {
+            error: "Coupon validation failed",
+            message: validation.message || "Invalid or expired coupon code",
+          },
+          { status: 400 }
+        );
+      }
     }
 
     const razorpayOrder = await PaymentService.createPaymentOrder(checkoutInput as any);

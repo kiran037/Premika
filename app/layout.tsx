@@ -3,10 +3,7 @@ import Script from "next/script";
 
 import "./globals.css";
 
-import { Footer } from "@/components/footer";
-import ModalProvider from "@/providers/modal-provider";
-import ToastProvider from "@/providers/toast-provider";
-import CustomerLayoutWrapper from "@/components/CustomerLayoutWrapper";
+import CustomerLayoutServer from "@/components/CustomerLayout.server";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 
 const font = Urbanist({ subsets: ["latin"] });
@@ -147,7 +144,7 @@ export default function RootLayout({
           </>
         )}
 
-        <CustomerLayoutWrapper>{children}</CustomerLayoutWrapper>
+        <CustomerLayoutServer>{children}</CustomerLayoutServer>
       </body>
     </html>
   );

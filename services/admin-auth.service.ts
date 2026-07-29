@@ -1,7 +1,20 @@
 import crypto from "crypto";
 import { AdminRepository } from "@/repositories/admin.repository";
 
-const SESSION_SECRET = process.env.ADMIN_SESSION_SECRET || "premika_super_secret_admin_session_key_2025";
+function getSessionSecret(): string {
+  const secret = process.env.ADMIN_SESSION_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "CRITICAL SECURITY ERROR: ADMIN_SESSION_SECRET environment variable is missing in production!"
+      );
+    }
+    return "premika_dev_admin_session_secret_key_2025";
+  }
+  return secret;
+}
+
+const SESSION_SECRET = getSessionSecret();
 export const ADMIN_COOKIE_NAME = "admin_session_token";
 
 export interface AdminSessionPayload {
