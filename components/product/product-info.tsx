@@ -151,11 +151,10 @@ export function ProductInfo({
             {[...Array(5)].map((_, i) => (
               <Star
                 key={i}
-                className={`w-4 h-4 ${
-                  i < rating
+                className={`w-4 h-4 ${i < rating
                     ? "fill-current"
                     : "stroke-current fill-transparent"
-                }`}
+                  }`}
               />
             ))}
           </div>
@@ -200,9 +199,8 @@ export function ProductInfo({
         {/* Stock Status */}
         <div className="mb-4">
           <span
-            className={`text-sm font-medium ${
-              inStock ? "text-green-600" : "text-red-600"
-            }`}
+            className={`text-sm font-medium ${inStock ? "text-green-600" : "text-red-600"
+              }`}
           >
             {inStock ? "✓ In Stock" : "✗ Out of Stock"}
           </span>
@@ -232,9 +230,8 @@ export function ProductInfo({
           {comboItems.map((item, index) => (
             <div
               key={item.id}
-              className={`space-y-4 ${
-                index > 0 ? "border-t border-primary/20 pt-4" : ""
-              }`}
+              className={`space-y-4 ${index > 0 ? "border-t border-primary/20 pt-4" : ""
+                }`}
             >
               <h4 className="text-sm font-semibold text-secondary flex items-center gap-2">
                 <span className="w-6 h-6 bg-foreground text-background rounded-full flex items-center justify-center text-xs">
@@ -257,13 +254,12 @@ export function ProductInfo({
                           handleComboSizeChange(item.id, size.label)
                         }
                         disabled={!size.inStock}
-                        className={`px-4 py-2 text-sm border rounded-md transition-colors ${
-                          comboSelections[item.id]?.size === size.label
+                        className={`px-4 py-2 text-sm border rounded-md transition-colors ${comboSelections[item.id]?.size === size.label
                             ? "bg-foreground text-background border-foreground"
                             : size.inStock
-                            ? "border-gray-300 hover:border-foreground"
-                            : "border-gray-200 text-gray-400 cursor-not-allowed"
-                        }`}
+                              ? "border-gray-300 hover:border-foreground"
+                              : "border-gray-200 text-gray-400 cursor-not-allowed"
+                          }`}
                       >
                         {size.label}
                         {!size.inStock && " (Out of Stock)"}
@@ -308,11 +304,10 @@ export function ProductInfo({
                         onClick={() =>
                           handleComboHeightChange(item.id, height.value)
                         }
-                        className={`px-3 py-1.5 text-xs border rounded-md transition-colors ${
-                          comboSelections[item.id]?.height === height.value
+                        className={`px-3 py-1.5 text-xs border rounded-md transition-colors ${comboSelections[item.id]?.height === height.value
                             ? "bg-foreground text-background border-foreground"
                             : "border-gray-300 hover:border-foreground"
-                        }`}
+                          }`}
                       >
                         {height.label}
                       </button>
@@ -335,13 +330,12 @@ export function ProductInfo({
                 key={size.label}
                 onClick={() => setSelectedSize(size.label)}
                 disabled={!size.inStock}
-                className={`px-4 py-2 text-sm border rounded-md transition-colors ${
-                  selectedSize === size.label
+                className={`px-4 py-2 text-sm border rounded-md transition-colors ${selectedSize === size.label
                     ? "bg-foreground text-background border-foreground"
                     : size.inStock
-                    ? "border-gray-300 hover:border-foreground"
-                    : "border-gray-200 text-gray-400 cursor-not-allowed"
-                }`}
+                      ? "border-gray-300 hover:border-foreground"
+                      : "border-gray-200 text-gray-400 cursor-not-allowed"
+                  }`}
               >
                 {size.label}
                 {!size.inStock && " (Out of Stock)"}
@@ -382,11 +376,10 @@ export function ProductInfo({
               <button
                 key={height.value}
                 onClick={() => setSelectedHeight(height.value)}
-                className={`px-4 py-2 text-sm border rounded-md transition-colors ${
-                  selectedHeight === height.value
+                className={`px-4 py-2 text-sm border rounded-md transition-colors ${selectedHeight === height.value
                     ? "bg-foreground text-background border-foreground"
                     : "border-gray-300 hover:border-foreground"
-                }`}
+                  }`}
               >
                 {height.label}
               </button>
@@ -495,8 +488,8 @@ export function ProductInfo({
             const chartType: ProductType = isCombo
               ? "combo"
               : gender === "male"
-              ? "male"
-              : "female";
+                ? "male"
+                : "female";
             sizeChartModal.onOpen(chartType);
           }}
         >

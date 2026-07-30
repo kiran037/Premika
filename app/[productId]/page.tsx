@@ -28,18 +28,15 @@ export async function generateMetadata({
 
   const pricing = getDiscountedPrice(product);
   const priceDisplay = pricing.isOnSale
-    ? `₹${pricing.discountedPrice.toFixed(2)} (${
-        pricing.discount
-      }% OFF - was ₹${pricing.originalPrice.toFixed(2)})`
+    ? `₹${pricing.discountedPrice.toFixed(2)} (${pricing.discount
+    }% OFF - was ₹${pricing.originalPrice.toFixed(2)})`
     : `₹${product.price.toFixed(2)}`;
 
   return {
     title: `${product.name}`,
-    description: `${
-      product.shortDescription
-    } - Available at Premika Store for ${priceDisplay}. ${
-      product.inStock ? "In Stock" : "Out of Stock"
-    }.`,
+    description: `${product.shortDescription
+      } - Available at Premika Store for ${priceDisplay}. ${product.inStock ? "In Stock" : "Out of Stock"
+      }.`,
   };
 }
 

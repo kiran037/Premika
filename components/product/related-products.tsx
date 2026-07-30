@@ -35,8 +35,8 @@ export function RelatedProducts({ products }: RelatedProductsProps) {
                 <Image
                   src={
                     hoveredProductId === product.id &&
-                    product.images &&
-                    product.images.length > 1
+                      product.images &&
+                      product.images.length > 1
                       ? product.images[1]
                       : product.images?.[0] || "/placeholder.svg"
                   }

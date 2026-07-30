@@ -84,9 +84,8 @@ export function ProductImageCarousel({ images, alt }: ProductImageCarouselProps)
           {images.map((_, index) => (
             <button
               key={index}
-              className={`w-2 h-2 rounded-full transition-colors ${
-                index === currentIndex ? "bg-gray-800" : "bg-gray-400"
-              }`}
+              className={`w-2 h-2 rounded-full transition-colors ${index === currentIndex ? "bg-gray-800" : "bg-gray-400"
+                }`}
               onClick={() => goToSlide(index)}
             />
           ))}
@@ -98,11 +97,10 @@ export function ProductImageCarousel({ images, alt }: ProductImageCarouselProps)
         {images.map((image, index) => (
           <div
             key={index}
-            className={`flex-shrink-0 w-20 h-26 md:w-28 md:h-32 rounded border-2 overflow-hidden transition-all cursor-pointer ${
-              index === currentIndex
+            className={`flex-shrink-0 w-20 h-26 md:w-28 md:h-32 rounded border-2 overflow-hidden transition-all cursor-pointer ${index === currentIndex
                 ? "border-foreground ring-2 ring-primary"
                 : "border-tertiary hover:border-foreground"
-            }`}
+              }`}
             onClick={() => goToSlide(index)}
           >
             <Image

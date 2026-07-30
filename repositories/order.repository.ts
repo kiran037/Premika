@@ -103,18 +103,45 @@ export class OrderRepository {
         customerId = created.id;
       }
 
-      // 2. Save Address
-      await tx.insert(customerAddresses).values({
-        customerId,
-        fullName: payload.customer.fullName,
-        phone: payload.customer.phone,
-        addressLine1: payload.customer.addressLine1,
-        addressLine2: payload.customer.addressLine2 || null,
-        city: payload.customer.city,
-        state: payload.customer.state,
-        postalCode: payload.customer.postalCode,
-        country: payload.customer.country || "India",
+      // 2. Save Address (with duplicate address prevention)
+      const existingAddresses = await tx
+        .select()
+        .from(customerAddresses)
+        .where(eq(customerAddresses.customerId, customerId));
+
+      const normalizeStr = (str?: string | null) => (str || "").trim().toLowerCase();
+
+      const newAddrLine1 = normalizeStr(payload.customer.addressLine1);
+      const newAddrLine2 = normalizeStr(payload.customer.addressLine2);
+      const newCity = normalizeStr(payload.customer.city);
+      const newState = normalizeStr(payload.customer.state);
+      const newPostalCode = normalizeStr(payload.customer.postalCode);
+      const newCountry = normalizeStr(payload.customer.country || "India");
+
+      const matchingAddress = existingAddresses.find((addr) => {
+        return (
+          normalizeStr(addr.addressLine1) === newAddrLine1 &&
+          normalizeStr(addr.addressLine2) === newAddrLine2 &&
+          normalizeStr(addr.city) === newCity &&
+          normalizeStr(addr.state) === newState &&
+          normalizeStr(addr.postalCode) === newPostalCode &&
+          normalizeStr(addr.country) === newCountry
+        );
       });
+
+      if (!matchingAddress) {
+        await tx.insert(customerAddresses).values({
+          customerId,
+          fullName: payload.customer.fullName,
+          phone: payload.customer.phone,
+          addressLine1: payload.customer.addressLine1,
+          addressLine2: payload.customer.addressLine2 || null,
+          city: payload.customer.city,
+          state: payload.customer.state,
+          postalCode: payload.customer.postalCode,
+          country: payload.customer.country || "India",
+        });
+      }
 
       // 3. Generate Order Number
       const orderNumber = `ORD-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
