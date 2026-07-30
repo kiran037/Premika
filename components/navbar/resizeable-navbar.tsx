@@ -50,7 +50,7 @@ export const NavBody: React.FC<NavBodyProps> = ({ children, className, visible }
   return (
     <div
       style={{
-        backdropFilter: visible ? "blur(12px)" : "none",
+        backdropFilter: visible ? "blur(20px) saturate(180%)" : "none",
         boxShadow: visible
           ? "0 0 24px rgba(34, 42, 53, 0.08), 0 1px 1px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(255, 255, 255, 0.1), 0 16px 48px rgba(0, 0, 0, 0.15)"
           : "none",
@@ -59,7 +59,9 @@ export const NavBody: React.FC<NavBodyProps> = ({ children, className, visible }
       }}
       className={cn(
         "relative z-[60] mx-auto hidden w-full flex-row items-center justify-between self-start rounded-full bg-foreground px-6 py-2.5 lg:flex transition-all duration-400 ease-out border border-transparent",
-        visible ? "max-w-5xl bg-foreground/95 border-white/10" : "max-w-7xl bg-foreground",
+        visible
+          ? "max-w-5xl bg-[#792520]/70 border-white/10"
+          : "max-w-7xl bg-foreground",
         className
       )}
     >
