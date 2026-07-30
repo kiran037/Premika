@@ -3,7 +3,17 @@ import { orders, orderItems, payments } from "@/db/schema/order";
 import { customers } from "@/db/schema/customer";
 import { products } from "@/db/schema/product";
 import { coupons } from "@/db/schema/marketing";
-import { eq, gte, lte, and, sql, count, desc, sum } from "drizzle-orm";
+import { eq, gte, lte, and, sql, count, desc, sum, inArray } from "drizzle-orm";
+
+// Valid order statuses that represent confirmed revenue / valid completed sales
+const VALID_REVENUE_STATUSES = [
+  "confirmed",
+  "processing",
+  "packed",
+  "shipped",
+  "out_for_delivery",
+  "delivered",
+] as const;
 
 export class AnalyticsRepository {
   /**
@@ -23,35 +33,52 @@ export class AnalyticsRepository {
       startDate.setFullYear(now.getFullYear(), 0, 1);
     }
 
-    // 1. Total Revenue in Range (Paid Orders/Payments)
+    // 1. Total Revenue in Range (Filtered by Valid Completed/Paid Orders)
     const paidOrders = await db
       .select({
         totalRevenue: sum(orders.total),
         orderCount: count(orders.id),
       })
       .from(orders)
-      .where(gte(orders.createdAt, startDate));
+      .where(
+        and(
+          gte(orders.createdAt, startDate),
+          inArray(orders.status, VALID_REVENUE_STATUSES)
+        )
+      );
 
-    // 2. Revenue Today
+    // 2. Revenue Today (Filtered by Valid Orders)
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     const revenueToday = await db
       .select({ totalRevenue: sum(orders.total) })
       .from(orders)
-      .where(gte(orders.createdAt, todayStart));
+      .where(
+        and(
+          gte(orders.createdAt, todayStart),
+          inArray(orders.status, VALID_REVENUE_STATUSES)
+        )
+      );
 
-    // 3. Revenue This Month
+    // 3. Revenue This Month (Filtered by Valid Orders)
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const revenueMonth = await db
       .select({ totalRevenue: sum(orders.total) })
       .from(orders)
-      .where(gte(orders.createdAt, monthStart));
+      .where(
+        and(
+          gte(orders.createdAt, monthStart),
+          inArray(orders.status, VALID_REVENUE_STATUSES)
+        )
+      );
 
     // 4. Order Counts by Status
     const allOrders = await db.select({ id: orders.id, status: orders.status }).from(orders);
     const totalOrders = allOrders.length;
     const pendingOrders = allOrders.filter((o) => o.status === "pending").length;
-    const completedOrders = allOrders.filter((o) => ["delivered", "confirmed", "processing"].includes(o.status)).length;
+    const completedOrders = allOrders.filter((o) =>
+      (VALID_REVENUE_STATUSES as readonly string[]).includes(o.status)
+    ).length;
 
     // 5. Total Customers, Total Products, Active Coupons
     const [totalCustomersRow, totalProductsRow, activeCouponsRow] = await Promise.all([
@@ -74,7 +101,7 @@ export class AnalyticsRepository {
   }
 
   /**
-   * Get sales & revenue chart trend data grouped by day/month
+   * Get sales & revenue chart trend data grouped by day/month (Valid Orders Only)
    */
   static async getSalesChartTrend(range: "today" | "7d" | "30d" | "year" = "30d") {
     const now = new Date();
@@ -101,7 +128,12 @@ export class AnalyticsRepository {
         total: orders.total,
       })
       .from(orders)
-      .where(gte(orders.createdAt, startDate));
+      .where(
+        and(
+          gte(orders.createdAt, startDate),
+          inArray(orders.status, VALID_REVENUE_STATUSES)
+        )
+      );
 
     // Group into time buckets
     const bucketMap: Record<string, { label: string; revenue: number; ordersCount: number }> = {};
@@ -204,7 +236,7 @@ export class AnalyticsRepository {
   }
 
   /**
-   * Fetch Top Selling Products Widget Data
+   * Fetch Top Selling Products Widget Data (Valid Completed Sales Only)
    */
   static async getTopSellingProducts(limit = 5) {
     const items = await db
@@ -214,6 +246,8 @@ export class AnalyticsRepository {
         totalRevenue: sum(orderItems.totalPrice),
       })
       .from(orderItems)
+      .innerJoin(orders, eq(orderItems.orderId, orders.id))
+      .where(inArray(orders.status, VALID_REVENUE_STATUSES))
       .groupBy(orderItems.productName)
       .orderBy(desc(sum(orderItems.quantity)))
       .limit(limit);

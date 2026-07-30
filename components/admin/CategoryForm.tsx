@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, Save, Image as ImageIcon } from "lucide-react";
 import { AdminCard, AdminButton, AdminInput } from "@/components/admin";
+import { SingleImageUploader } from "./SingleImageUploader";
 import { toast } from "react-hot-toast";
 
 export interface CategoryFormProps {
@@ -139,26 +140,15 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
           </AdminCard>
 
           {/* Category Banner Image */}
-          <AdminCard title="Category Banner Image" description="Category hero or thumbnail image URL">
-            <div className="space-y-4">
-              <AdminInput
-                label="Image URL"
-                placeholder="https://images.unsplash.com/..."
-                value={image}
-                onChange={(e) => setImage(e.target.value)}
-              />
-
-              <div className="relative w-full h-72 bg-stone-100 rounded-[28px] overflow-hidden border border-stone-200 flex items-center justify-center">
-                {isValidUrl && image ? (
-                  <Image src={image} alt={name || "Preview"} fill className="object-cover" />
-                ) : (
-                  <div className="flex flex-col items-center justify-center text-stone-400 text-xs">
-                    <ImageIcon size={32} />
-                    <span className="mt-2 text-xs">Image Preview Card</span>
-                  </div>
-                )}
-              </div>
-            </div>
+          <AdminCard title="Category Banner Image" description="Upload a hero banner or thumbnail for this category">
+            <SingleImageUploader
+              bucket="categories"
+              folder="categories"
+              value={image}
+              onChange={(url) => setImage(url)}
+              label="Category Banner Image"
+              description="PNG, JPG, or WEBP up to 5MB. Will be saved to Supabase categories storage."
+            />
           </AdminCard>
         </div>
 

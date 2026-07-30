@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { AdminInput } from "./AdminInput";
 import { AdminButton } from "./AdminButton";
+import { SingleImageUploader } from "./SingleImageUploader";
 import { storeSettingsSchema, StoreSettingsInput } from "@/lib/validations/admin-store.schema";
 import { Building, Mail, Phone, Image as ImageIcon, AlertTriangle, ShieldCheck } from "lucide-react";
 import { toast } from "react-hot-toast";
@@ -143,54 +144,44 @@ export const StoreSettingsForm: React.FC<StoreSettingsFormProps> = ({
       {/* Branding Image Assets */}
       <div className="pt-4 border-t border-stone-100 grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Store Logo */}
-        <div className="space-y-3">
-          <label className="block text-xs font-semibold text-stone-800">Store Logo URL</label>
-          <div className="flex items-center gap-3">
-            <div className="w-16 h-16 rounded-xl border border-stone-200 bg-stone-50 flex items-center justify-center overflow-hidden flex-shrink-0 relative">
-              {formData.logo ? (
-                <Image src={formData.logo} alt="Store Logo" fill className="object-contain p-1" />
-              ) : (
-                <ImageIcon size={24} className="text-stone-400" />
-              )}
-            </div>
-            <div className="flex-1">
-              <input
-                type="url"
-                name="logo"
-                placeholder="https://images.unsplash.com/..."
-                value={formData.logo || ""}
-                onChange={handleChange}
-                className="w-full px-3 py-2 text-xs border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#B67B5C]"
-              />
-              <p className="text-[11px] text-stone-400 mt-1">Recommended format: PNG or SVG (transparent background)</p>
-            </div>
-          </div>
-        </div>
+        <SingleImageUploader
+          bucket="store"
+          folder="store"
+          label="Store Logo"
+          description="Recommended format: PNG, WEBP, or SVG (transparent background)"
+          value={formData.logo || ""}
+          onChange={(url) => {
+            setFormData((prev) => ({ ...prev, logo: url }));
+            if (errors.logo) {
+              setErrors((prev) => {
+                const copy = { ...prev };
+                delete copy.logo;
+                return copy;
+              });
+            }
+          }}
+          aspectRatio="square"
+        />
 
         {/* Store Favicon */}
-        <div className="space-y-3">
-          <label className="block text-xs font-semibold text-stone-800">Favicon URL</label>
-          <div className="flex items-center gap-3">
-            <div className="w-16 h-16 rounded-xl border border-stone-200 bg-stone-50 flex items-center justify-center overflow-hidden flex-shrink-0 relative">
-              {formData.favicon ? (
-                <Image src={formData.favicon} alt="Favicon" fill className="object-contain p-2" />
-              ) : (
-                <ImageIcon size={24} className="text-stone-400" />
-              )}
-            </div>
-            <div className="flex-1">
-              <input
-                type="url"
-                name="favicon"
-                placeholder="https://.../favicon.ico"
-                value={formData.favicon || ""}
-                onChange={handleChange}
-                className="w-full px-3 py-2 text-xs border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#B67B5C]"
-              />
-              <p className="text-[11px] text-stone-400 mt-1">Recommended size: 32x32px or 64x64px ICO/PNG</p>
-            </div>
-          </div>
-        </div>
+        <SingleImageUploader
+          bucket="store"
+          folder="store"
+          label="Store Favicon"
+          description="Recommended size: 32x32px or 64x64px ICO, PNG, or WEBP"
+          value={formData.favicon || ""}
+          onChange={(url) => {
+            setFormData((prev) => ({ ...prev, favicon: url }));
+            if (errors.favicon) {
+              setErrors((prev) => {
+                const copy = { ...prev };
+                delete copy.favicon;
+                return copy;
+              });
+            }
+          }}
+          aspectRatio="square"
+        />
       </div>
 
       {/* Maintenance Mode Toggle */}
