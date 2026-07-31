@@ -5,56 +5,62 @@ import { StoreSettingsForm } from "@/components/admin/StoreSettingsForm";
 import { StoreContactForm } from "@/components/admin/StoreContactForm";
 import { SocialLinksManager, SocialLink } from "@/components/admin/SocialLinksManager";
 import { DelhiverySettingsForm } from "@/components/admin/DelhiverySettingsForm";
+import { SeoSettingsForm } from "@/components/admin/SeoSettingsForm";
 import { Skeleton } from "@/components/admin/Skeleton";
 import { AdminCard } from "@/components/admin/AdminCard";
 import { StoreSettingsInput, StoreContactsInput, SocialLinkInput } from "@/lib/validations/admin-store.schema";
 import { DelhiverySettingsInput } from "@/lib/validations/admin-delhivery.schema";
+import { GlobalSeoInput } from "@/lib/validations/seo";
 import {
   Settings,
   Building,
   MapPin,
   Share2,
   Cpu,
-  CheckCircle2,
-  AlertCircle,
   CreditCard,
   Mail,
   DollarSign,
   Truck,
-  Percent,
+  Globe,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 
 export default function AdminSettingsPage() {
-  const [activeTab, setActiveTab] = useState<"general" | "contact" | "social" | "delhivery" | "integrations">("general");
+  const [activeTab, setActiveTab] = useState<
+    "general" | "contact" | "social" | "delhivery" | "seo" | "integrations"
+  >("general");
 
   const [settings, setSettings] = useState<StoreSettingsInput | null>(null);
   const [contacts, setContacts] = useState<StoreContactsInput | null>(null);
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
   const [delhiverySettings, setDelhiverySettings] = useState<DelhiverySettingsInput | null>(null);
+  const [seoSettings, setSeoSettings] = useState<GlobalSeoInput | null>(null);
   const [systemInfo, setSystemInfo] = useState<any>(null);
 
   const [loading, setLoading] = useState(true);
   const [savingSettings, setSavingSettings] = useState(false);
   const [savingContacts, setSavingContacts] = useState(false);
   const [savingDelhivery, setSavingDelhivery] = useState(false);
+  const [savingSeo, setSavingSeo] = useState(false);
 
   const loadAllData = async () => {
     setLoading(true);
     try {
-      const [settingsRes, contactsRes, socialRes, delhiveryRes, sysRes] = await Promise.all([
+      const [settingsRes, contactsRes, socialRes, delhiveryRes, seoRes, sysRes] = await Promise.all([
         fetch("/api/admin/settings/store"),
         fetch("/api/admin/settings/contact"),
         fetch("/api/admin/settings/social"),
         fetch("/api/admin/settings/delhivery"),
+        fetch("/api/admin/settings/seo"),
         fetch("/api/admin/system"),
       ]);
 
-      const [sJson, cJson, socJson, dJson, sysJson] = await Promise.all([
+      const [sJson, cJson, socJson, dJson, seoJson, sysJson] = await Promise.all([
         settingsRes.json(),
         contactsRes.json(),
         socialRes.json(),
         delhiveryRes.json(),
+        seoRes.json(),
         sysRes.json(),
       ]);
 
@@ -62,6 +68,7 @@ export default function AdminSettingsPage() {
       if (cJson.success) setContacts(cJson.data);
       if (socJson.success) setSocialLinks(socJson.data || []);
       if (dJson.success) setDelhiverySettings(dJson.data);
+      if (seoJson.success) setSeoSettings(seoJson.data);
       if (sysJson.success) setSystemInfo(sysJson.data);
     } catch {
       toast.error("Failed to load store settings");
@@ -140,6 +147,28 @@ export default function AdminSettingsPage() {
     }
   };
 
+  const handleSaveSeo = async (data: GlobalSeoInput) => {
+    setSavingSeo(true);
+    try {
+      const res = await fetch("/api/admin/settings/seo", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const json = await res.json();
+      if (json.success) {
+        toast.success(json.message || "Global SEO settings updated successfully");
+        setSeoSettings(json.data);
+      } else {
+        toast.error(json.message || "Failed to update SEO settings");
+      }
+    } catch {
+      toast.error("Error saving SEO settings");
+    } finally {
+      setSavingSeo(false);
+    }
+  };
+
   const handleAddSocial = async (data: SocialLinkInput) => {
     const res = await fetch("/api/admin/settings/social", {
       method: "POST",
@@ -199,7 +228,7 @@ export default function AdminSettingsPage() {
           <span>Store Configuration & Business Settings</span>
         </h1>
         <p className="text-xs text-stone-500 mt-1">
-          Manage store identity, branding assets, contact information, social links, Delhivery shipping, and integration statuses.
+          Manage store identity, branding assets, contact information, social links, Delhivery shipping, global SEO, and integration statuses.
         </p>
       </div>
 
@@ -254,6 +283,18 @@ export default function AdminSettingsPage() {
         </button>
 
         <button
+          onClick={() => setActiveTab("seo")}
+          className={`flex items-center gap-2 px-4 py-2.5 border-b-2 transition whitespace-nowrap ${
+            activeTab === "seo"
+              ? "border-[#B67B5C] text-[#B67B5C]"
+              : "border-transparent text-stone-500 hover:text-stone-900"
+          }`}
+        >
+          <Globe size={16} />
+          <span>Global SEO Settings</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab("integrations")}
           className={`flex items-center gap-2 px-4 py-2.5 border-b-2 transition whitespace-nowrap ${
             activeTab === "integrations"
@@ -297,6 +338,14 @@ export default function AdminSettingsPage() {
           initialData={delhiverySettings}
           onSave={handleSaveDelhivery}
           isLoading={savingDelhivery}
+        />
+      )}
+
+      {activeTab === "seo" && (
+        <SeoSettingsForm
+          initialData={seoSettings}
+          onSave={handleSaveSeo}
+          isLoading={savingSeo}
         />
       )}
 

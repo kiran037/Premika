@@ -1,140 +1,158 @@
-"use client";
-
-import React, { useState, useEffect, useMemo, Suspense } from "react";
-import { useParams } from "next/navigation";
+import React from "react";
 import ProductCard from "@/components/product-card";
-import { Product, Category } from "@/types";
 import ShopToolbar from "@/components/shop/shop-toolbar";
 import ShopFilters from "@/components/shop/shop-filters";
+import JsonLd from "@/components/JsonLd";
+import { CategoryService } from "@/services/category.service";
+import { ProductService } from "@/services/product.service";
+import { SeoService } from "@/services/seo.service";
+import { CategoryRepository } from "@/repositories/category.repository";
 import { Tag, ShoppingBag } from "lucide-react";
+import { Metadata } from "next";
 
-function CategoryContent() {
-  const params = useParams();
-  const rawSlug = (params?.slug as string) || "";
-  const decodedSlug = decodeURIComponent(rawSlug).toLowerCase();
+interface CategoryPageProps {
+  params: {
+    slug: string;
+  };
+  searchParams?: {
+    availability?: string;
+    featured?: string;
+    new?: string;
+    sort?: string;
+  };
+}
 
-  const [categoryInfo, setCategoryInfo] = useState<Category | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+export async function generateMetadata({
+  params,
+}: CategoryPageProps): Promise<Metadata> {
+  const decodedSlug = decodeURIComponent(params.slug).toLowerCase();
+  const [categoryRecord, seo] = await Promise.all([
+    CategoryRepository.findCategoryBySlug(decodedSlug),
+    SeoService.getSeoSettings(),
+  ]);
 
-  const [availabilityFilter, setAvailabilityFilter] = useState<string>("");
-  const [isFeaturedOnly, setIsFeaturedOnly] = useState<boolean>(false);
-  const [isNewOnly, setIsNewOnly] = useState<boolean>(false);
-  const [sortBy, setSortBy] = useState<string>("featured");
+  const displayCategoryName =
+    categoryRecord?.name ||
+    decodedSlug.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
 
-  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+  const canonicalDomain = seo?.canonicalDomain || "https://premika.shop";
+  const defaultTitle = `${displayCategoryName} | ${seo?.siteName || "Premika"}`;
+  const defaultDescription =
+    categoryRecord?.description ||
+    `Discover our handcrafted ${displayCategoryName.toLowerCase()} collection designed for timeless grace.`;
 
-  useEffect(() => {
-    async function loadCategoryData() {
-      try {
-        setLoading(true);
+  const metaTitle = categoryRecord?.metaTitle || defaultTitle;
+  const metaDescription = categoryRecord?.metaDescription || defaultDescription;
+  const keywords = categoryRecord?.keywords
+    ? categoryRecord.keywords.split(",").map((k) => k.trim()).filter(Boolean)
+    : seo?.defaultKeywords
+    ? seo.defaultKeywords.split(",").map((k) => k.trim()).filter(Boolean)
+    : undefined;
 
-        const [prodRes, catRes] = await Promise.all([
-          fetch("/api/products?limit=100"),
-          fetch("/api/categories"),
-        ]);
+  const canonicalUrl =
+    categoryRecord?.canonicalUrl || `${canonicalDomain}/category/${categoryRecord?.slug || decodedSlug}`;
+  const ogImage =
+    categoryRecord?.ogImage || categoryRecord?.image || seo?.defaultOgImage || "/logo.png";
+  const twitterHandle = seo?.twitterHandle || "@premika_store";
 
-        const prodJson = await prodRes.json();
-        const catJson = await catRes.json();
+  return {
+    title: metaTitle,
+    description: metaDescription,
+    keywords: keywords,
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    openGraph: {
+      title: metaTitle,
+      description: metaDescription,
+      url: canonicalUrl,
+      siteName: seo?.siteName || "Premika Store",
+      images: [
+        {
+          url: ogImage,
+          alt: displayCategoryName,
+        },
+      ],
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: metaTitle,
+      description: metaDescription,
+      images: [ogImage],
+      creator: twitterHandle,
+    },
+    robots: {
+      index: !categoryRecord?.noIndex,
+      follow: !categoryRecord?.noIndex,
+    },
+  };
+}
 
-        let allCats: Category[] = [];
-        if (catJson.success && Array.isArray(catJson.data)) {
-          allCats = catJson.data;
-        } else if (Array.isArray(catJson)) {
-          allCats = catJson;
-        }
-        setCategories(allCats);
+export default async function CategoryPage({ params, searchParams }: CategoryPageProps) {
+  const decodedSlug = decodeURIComponent(params.slug).toLowerCase();
 
-        // Find current category
-        const matchedCat = allCats.find(
-          (c) =>
-            (c.slug || "").toLowerCase() === decodedSlug ||
-            (c.name || "").toLowerCase() === decodedSlug ||
-            c.id.toLowerCase() === decodedSlug
-        );
-        if (matchedCat) {
-          setCategoryInfo(matchedCat);
-        }
-
-        if (prodJson.success && Array.isArray(prodJson.data)) {
-          setProducts(prodJson.data);
-        } else if (Array.isArray(prodJson)) {
-          setProducts(prodJson);
-        }
-      } catch (err) {
-        console.error("Error loading category page data:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    if (decodedSlug) {
-      loadCategoryData();
-    }
-  }, [decodedSlug]);
+  const [categoryInfo, categories, { items: allProducts }, seo] = await Promise.all([
+    CategoryService.getCategoryBySlug(decodedSlug),
+    CategoryService.getCategories(),
+    ProductService.getProducts({ category: decodedSlug, limit: 100 }),
+    SeoService.getSeoSettings(),
+  ]);
 
   const displayCategoryName =
     categoryInfo?.name ||
     decodedSlug.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
 
-  const activeFilterCount = useMemo(() => {
-    let count = 0;
-    if (availabilityFilter) count++;
-    if (isFeaturedOnly) count++;
-    if (isNewOnly) count++;
-    return count;
-  }, [availabilityFilter, isFeaturedOnly, isNewOnly]);
+  const canonicalDomain = seo?.canonicalDomain || "https://premika.shop";
 
-  const filteredAndSortedProducts = useMemo(() => {
-    let result = [...products];
+  // Search parameters filters
+  const availabilityFilter = searchParams?.availability || "";
+  const isFeaturedOnly = searchParams?.featured === "true";
+  const isNewOnly = searchParams?.new === "true";
+  const sortBy = searchParams?.sort || "featured";
 
-    // Filter by Category Slug
-    result = result.filter((p) => {
-      const catStr = typeof p.category === "string" ? p.category : (p.category as any)?.name || "";
-      return (
-        catStr.toLowerCase().includes(decodedSlug) ||
-        (p.shortDescription || "").toLowerCase().includes(decodedSlug) ||
-        p.name.toLowerCase().includes(decodedSlug)
-      );
-    });
+  let filteredProducts = [...allProducts];
 
-    if (availabilityFilter === "in-stock") {
-      result = result.filter((p) => p.inStock);
-    } else if (availabilityFilter === "out-of-stock") {
-      result = result.filter((p) => !p.inStock);
-    }
+  if (availabilityFilter === "in-stock") {
+    filteredProducts = filteredProducts.filter((p) => p.inStock);
+  } else if (availabilityFilter === "out-of-stock") {
+    filteredProducts = filteredProducts.filter((p) => !p.inStock);
+  }
 
-    if (isFeaturedOnly) {
-      result = result.filter((p) => p.isFeatured || p.featured);
-    }
+  if (isFeaturedOnly) {
+    filteredProducts = filteredProducts.filter((p) => (p as any).isFeatured || p.featured);
+  }
 
-    if (isNewOnly) {
-      result = result.filter((p) => p.newArrival || p.isFeatured || p.featured);
-    }
+  if (isNewOnly) {
+    filteredProducts = filteredProducts.filter((p) => p.newArrival || (p as any).isFeatured || p.featured);
+  }
 
-    if (sortBy === "price-low") {
-      result.sort((a, b) => a.price - b.price);
-    } else if (sortBy === "price-high") {
-      result.sort((a, b) => b.price - a.price);
-    } else if (sortBy === "name") {
-      result.sort((a, b) => a.name.localeCompare(b.name));
-    } else if (sortBy === "newest") {
-      result.sort((a, b) => (b.createdAt || b.id || "").localeCompare(a.createdAt || a.id || ""));
-    }
+  if (sortBy === "price-low") {
+    filteredProducts.sort((a, b) => a.price - b.price);
+  } else if (sortBy === "price-high") {
+    filteredProducts.sort((a, b) => b.price - a.price);
+  } else if (sortBy === "name") {
+    filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
+  } else if (sortBy === "newest") {
+    filteredProducts.sort((a, b) => (b.createdAt || b.id || "").localeCompare(a.createdAt || a.id || ""));
+  }
 
-    return result;
-  }, [products, decodedSlug, availabilityFilter, isFeaturedOnly, isNewOnly, sortBy]);
+  let activeFilterCount = 0;
+  if (availabilityFilter) activeFilterCount++;
+  if (isFeaturedOnly) activeFilterCount++;
+  if (isNewOnly) activeFilterCount++;
 
-  const handleClearAll = () => {
-    setAvailabilityFilter("");
-    setIsFeaturedOnly(false);
-    setIsNewOnly(false);
-    setSortBy("featured");
-  };
+  const breadcrumbs = [
+    { name: "Home", url: canonicalDomain },
+    { name: "Shop", url: `${canonicalDomain}/shop` },
+    { name: displayCategoryName, url: `${canonicalDomain}/category/${decodedSlug}` },
+  ];
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Structured Data JSON-LD */}
+      <JsonLd type="BreadcrumbList" items={breadcrumbs} />
+
       {/* Category Header Banner */}
       <div className="bg-popover/30 border-b border-[#B67B5C]/30 py-8 sm:py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -165,12 +183,12 @@ function CategoryContent() {
                 selectedCategory={displayCategoryName}
                 onSelectCategory={() => {}}
                 availabilityFilter={availabilityFilter}
-                onSelectAvailability={setAvailabilityFilter}
+                onSelectAvailability={() => {}}
                 isFeaturedOnly={isFeaturedOnly}
-                onToggleFeatured={setIsFeaturedOnly}
+                onToggleFeatured={() => {}}
                 isNewOnly={isNewOnly}
-                onToggleNew={setIsNewOnly}
-                onClearAll={handleClearAll}
+                onToggleNew={() => {}}
+                onClearAll={() => {}}
                 activeFilterCount={activeFilterCount}
               />
             </div>
@@ -179,37 +197,24 @@ function CategoryContent() {
           {/* Products Grid Area */}
           <div className="lg:col-span-3">
             <ShopToolbar
-              totalProducts={filteredAndSortedProducts.length}
+              totalProducts={filteredProducts.length}
               sortBy={sortBy}
-              onSortChange={setSortBy}
-              onOpenMobileFilters={() => setIsMobileFiltersOpen(true)}
+              onSortChange={() => {}}
+              onOpenMobileFilters={() => {}}
               activeFilterCount={activeFilterCount}
             />
 
-            {loading ? (
-              <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 animate-pulse">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="h-80 bg-gray-200 rounded-lg"></div>
-                ))}
-              </div>
-            ) : filteredAndSortedProducts.length === 0 ? (
+            {filteredProducts.length === 0 ? (
               <div className="text-center py-16 bg-popover/20 border border-dashed border-primary/30 rounded-xl p-8">
                 <ShoppingBag size={36} className="mx-auto text-primary/60 mb-3" />
                 <h3 className="text-lg font-bold text-foreground mb-1">No Products Found</h3>
                 <p className="text-xs sm:text-sm text-muted-foreground max-w-sm mx-auto mb-6">
                   We couldn&apos;t find any products matching the {displayCategoryName} category.
                 </p>
-                <button
-                  type="button"
-                  onClick={handleClearAll}
-                  className="px-5 py-2.5 bg-foreground text-background text-xs sm:text-sm font-bold rounded-md hover:bg-secondary transition-colors"
-                >
-                  Reset Filters
-                </button>
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-                {filteredAndSortedProducts.map((product) => (
+                {filteredProducts.map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
               </div>
@@ -217,39 +222,6 @@ function CategoryContent() {
           </div>
         </div>
       </div>
-
-      {/* Mobile Filter Modal */}
-      {isMobileFiltersOpen && (
-        <ShopFilters
-          categories={categories}
-          selectedCategory={displayCategoryName}
-          onSelectCategory={() => {}}
-          availabilityFilter={availabilityFilter}
-          onSelectAvailability={setAvailabilityFilter}
-          isFeaturedOnly={isFeaturedOnly}
-          onToggleFeatured={setIsFeaturedOnly}
-          isNewOnly={isNewOnly}
-          onToggleNew={setIsNewOnly}
-          onClearAll={handleClearAll}
-          activeFilterCount={activeFilterCount}
-          isMobileModal={true}
-          onCloseMobileModal={() => setIsMobileFiltersOpen(false)}
-        />
-      )}
     </div>
-  );
-}
-
-export default function CategoryPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen bg-background flex items-center justify-center p-8">
-          <div className="animate-pulse text-sm text-primary font-bold">Loading category...</div>
-        </div>
-      }
-    >
-      <CategoryContent />
-    </Suspense>
   );
 }

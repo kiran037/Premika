@@ -4,11 +4,10 @@ import {
 } from "@/repositories/product.repository";
 import { CategoryRepository } from "@/repositories/category.repository";
 import { GetProductsInput, getProductsQuerySchema } from "@/lib/validations/product.query";
+import { productSeoSchema } from "@/lib/validations/seo";
 import { Product, SizeOption, HeightOption, Review } from "@/types";
 
 export class ProductService {
-  // TODO: Admin Panel - Future Integration (Admin Product CRUD: createProduct, updateProduct, deleteProduct, toggleStock)
-
   /**
    * Format repository product output to match Product frontend interface
    */
@@ -127,17 +126,29 @@ export class ProductService {
   }
 
   /**
-   * Admin: Create product with relations
+   * Admin: Create product with relations and validated SEO fields
    */
   static async createAdminProduct(payload: any) {
-    return await ProductRepository.createAdminProduct(payload);
+    const validatedSeo = productSeoSchema.partial().safeParse(payload);
+    const seoFields = validatedSeo.success ? validatedSeo.data : {};
+
+    return await ProductRepository.createAdminProduct({
+      ...payload,
+      ...seoFields,
+    });
   }
 
   /**
-   * Admin: Update product with relations
+   * Admin: Update product with relations and validated SEO fields
    */
   static async updateAdminProduct(id: string, payload: any) {
-    return await ProductRepository.updateAdminProduct(id, payload);
+    const validatedSeo = productSeoSchema.partial().safeParse(payload);
+    const seoFields = validatedSeo.success ? validatedSeo.data : {};
+
+    return await ProductRepository.updateAdminProduct(id, {
+      ...payload,
+      ...seoFields,
+    });
   }
 
   /**

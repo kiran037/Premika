@@ -15,6 +15,13 @@
       "when": 1785338056135,
       "tag": "0001_perpetual_abomination",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785500551992,
+      "tag": "0002_robust_roxanne_simpson",
+      "breakpoints": true
     }
   ]
 }

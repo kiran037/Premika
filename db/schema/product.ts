@@ -38,8 +38,20 @@ export const categories = pgTable(
 
         sortOrder: integer("sort_order").default(0).notNull(),
 
-        createdAt: timestamp("created_at").defaultNow().notNull(),
+        // SEO Fields
+        metaTitle: varchar("meta_title", { length: 255 }),
 
+        metaDescription: text("meta_description"),
+
+        keywords: text("keywords"),
+
+        canonicalUrl: text("canonical_url"),
+
+        ogImage: text("og_image"),
+
+        noIndex: boolean("no_index").default(false),
+
+        createdAt: timestamp("created_at").defaultNow().notNull(),
         updatedAt: timestamp("updated_at")
             .defaultNow()
             .$onUpdate(() => new Date())
@@ -139,6 +151,19 @@ export const products = pgTable(
         isActive: boolean("is_active")
             .default(true)
             .notNull(),
+
+        // SEO Fields
+        metaTitle: varchar("meta_title", { length: 255 }),
+
+        metaDescription: text("meta_description"),
+
+        keywords: text("keywords"),
+
+        canonicalUrl: text("canonical_url"),
+
+        ogImage: text("og_image"),
+
+        noIndex: boolean("no_index").default(false),
 
         createdAt: timestamp("created_at")
             .defaultNow()

@@ -1,6 +1,7 @@
 import { db } from "@/db/client";
 import { storeSettings, storeContacts, socialLinks } from "@/db/schema/store";
 import { eq, asc } from "drizzle-orm";
+import { SeoRepository } from "@/repositories/seo.repository";
 
 export class StoreRepository {
   // Store Settings
@@ -38,6 +39,15 @@ export class StoreRepository {
         .returning();
       return inserted;
     }
+  }
+
+  // Global SEO Settings
+  static async getSeoSettings() {
+    return SeoRepository.getSeoSettings();
+  }
+
+  static async updateSeoSettings(data: any) {
+    return SeoRepository.updateSeoSettings(data);
   }
 
   // Store Contacts

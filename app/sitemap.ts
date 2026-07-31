@@ -1,11 +1,25 @@
 import { MetadataRoute } from "next";
-import { ProductService } from "@/services/product.service";
+import { ProductRepository } from "@/repositories/product.repository";
+import { CategoryService } from "@/services/category.service";
+import { SeoService } from "@/services/seo.service";
+
+export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = "https://premika.shop";
   const currentDate = new Date().toISOString();
 
-  // Static pages
+  let baseUrl = "https://premika.shop";
+
+  try {
+    const seo = await SeoService.getSeoSettings();
+    if (seo?.canonicalDomain) {
+      baseUrl = seo.canonicalDomain.replace(/\/$/, "");
+    }
+  } catch {
+    // Fallback if SEO settings unavailable
+  }
+
+  // Static Pages
   const staticPages: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
@@ -14,10 +28,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 1.0,
     },
     {
+      url: `${baseUrl}/shop`,
+      lastModified: currentDate,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    {
       url: `${baseUrl}/contact-us`,
       lastModified: currentDate,
       changeFrequency: "monthly",
-      priority: 0.8,
+      priority: 0.6,
     },
     {
       url: `${baseUrl}/terms-and-conditions`,
@@ -29,53 +49,54 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${baseUrl}/privacy-policy`,
       lastModified: currentDate,
       changeFrequency: "monthly",
-      priority: 0.5,
+      priority: 0.6,
     },
     {
       url: `${baseUrl}/shipping-policy`,
       lastModified: currentDate,
       changeFrequency: "monthly",
-      priority: 0.5,
-    },
-    {
-      url: `${baseUrl}/cart`,
-      lastModified: currentDate,
-      changeFrequency: "always",
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/wishlist`,
-      lastModified: currentDate,
-      changeFrequency: "always",
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/checkout`,
-      lastModified: currentDate,
-      changeFrequency: "always",
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/track-order`,
-      lastModified: currentDate,
-      changeFrequency: "always",
-      priority: 0.7,
+      priority: 0.6,
     },
   ];
 
   try {
-    const { items: products } = await ProductService.getProducts({ limit: 100 });
+    const [categories, { items: productItems }] = await Promise.all([
+      CategoryService.getCategories(),
+      ProductRepository.getAdminProducts({ limit: 1000, isActive: true }),
+    ]);
 
-    const productPages: MetadataRoute.Sitemap = products.map((product) => ({
-      url: `${baseUrl}/${product.id}`,
-      lastModified: currentDate,
-      changeFrequency: "weekly",
-      priority: 0.9,
-    }));
+    // Filter active categories that are NOT marked noIndex
+    const categoryPages: MetadataRoute.Sitemap = categories
+      .filter((cat) => cat.isActive && !cat.noIndex)
+      .map((cat) => ({
+        url: `${baseUrl}/category/${encodeURIComponent(cat.slug)}`,
+        lastModified: cat.updatedAt ? new Date(cat.updatedAt).toISOString() : currentDate,
+        changeFrequency: "weekly",
+        priority: 0.8,
+      }));
 
-    return [...staticPages, ...productPages];
+    // Filter active products that are NOT marked noIndex
+    const productPages: MetadataRoute.Sitemap = productItems
+      .map((item) => item.product)
+      .filter((p) => p.isActive && !p.noIndex)
+      .map((p) => ({
+        url: `${baseUrl}/${encodeURIComponent(p.slug || p.id)}`,
+        lastModified: p.updatedAt ? new Date(p.updatedAt).toISOString() : currentDate,
+        changeFrequency: "weekly",
+        priority: 0.9,
+      }));
+
+    // Deduplicate entries by URL
+    const map = new Map<string, MetadataRoute.Sitemap[number]>();
+    [...staticPages, ...categoryPages, ...productPages].forEach((entry) => {
+      if (entry.url && !map.has(entry.url)) {
+        map.set(entry.url, entry);
+      }
+    });
+
+    return Array.from(map.values());
   } catch (error) {
-    console.error("Error generating sitemap:", error);
+    console.error("Error generating dynamic sitemap:", error);
     return staticPages;
   }
 }

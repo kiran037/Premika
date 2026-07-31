@@ -1,67 +1,101 @@
-"use client";
-
-import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowRight, Gift } from "lucide-react";
+import { Metadata } from "next";
 
 import HeroSection from "@/components/home/hero";
 import NewArrivals from "@/components/home/new-arrivals";
 import FeaturedProducts from "@/components/home/featured-products";
 import CategorySection from "@/components/home/category-section";
-import { Product, Category } from "@/types";
+import JsonLd from "@/components/JsonLd";
+import { ProductService } from "@/services/product.service";
+import { CategoryService } from "@/services/category.service";
+import { SeoService } from "@/services/seo.service";
+import { StoreService } from "@/services/store.service";
 
-export default function Homepage() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+export async function generateMetadata(): Promise<Metadata> {
+  const seo = await SeoService.getSeoSettings();
 
-  useEffect(() => {
-    async function loadHomeData() {
-      try {
-        setLoading(true);
-        const [prodRes, catRes] = await Promise.all([
-          fetch("/api/products?limit=100"),
-          fetch("/api/categories"),
-        ]);
+  const title = seo?.defaultMetaTitle || "Premika - Premium Designer Kurtis Online";
+  const description =
+    seo?.defaultMetaDescription ||
+    "Discover premium women's fashion at Premika. Shop designer kurtis, halter neck tops, cotton kurtas & ethnic wear. Free shipping on orders over ₹500.";
+  const canonicalUrl = seo?.canonicalDomain || "https://premika.shop";
+  const ogImage = seo?.defaultOgImage || "/logo.png";
+  const twitterHandle = seo?.twitterHandle || "@premika_store";
 
-        const prodJson = await prodRes.json();
-        const catJson = await catRes.json();
+  return {
+    title: title,
+    description: description,
+    keywords: seo?.defaultKeywords
+      ? seo.defaultKeywords.split(",").map((k) => k.trim()).filter(Boolean)
+      : ["ethnic wear", "kurtis", "sarees", "women clothing", "premika"],
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    openGraph: {
+      title: title,
+      description: description,
+      url: canonicalUrl,
+      siteName: seo?.siteName || "Premika Store",
+      images: [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+          alt: seo?.siteName || "Premika Store",
+        },
+      ],
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: title,
+      description: description,
+      images: [ogImage],
+      creator: twitterHandle,
+    },
+  };
+}
 
-        if (prodJson.success && Array.isArray(prodJson.data)) {
-          setProducts(prodJson.data);
-        } else if (Array.isArray(prodJson)) {
-          setProducts(prodJson);
-        }
+export default async function Homepage() {
+  const [{ items: products }, categories, seo, storeSettings] = await Promise.all([
+    ProductService.getProducts({ limit: 100 }),
+    CategoryService.getCategories(),
+    SeoService.getSeoSettings(),
+    StoreService.getStoreSettings(),
+  ]);
 
-        if (catJson.success && Array.isArray(catJson.data)) {
-          setCategories(catJson.data);
-        } else if (Array.isArray(catJson)) {
-          setCategories(catJson);
-        }
-      } catch (err) {
-        console.error("Error loading home data:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadHomeData();
-  }, []);
+  const siteUrl = seo?.canonicalDomain || "https://premika.shop";
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      {/* Structured Data (JSON-LD) */}
+      <JsonLd
+        type="Organization"
+        name={seo?.siteName || storeSettings?.storeName || "Premika"}
+        url={siteUrl}
+        logo={seo?.defaultOgImage || storeSettings?.logo || `${siteUrl}/logo.png`}
+      />
+      <JsonLd
+        type="WebSite"
+        name={seo?.siteName || "Premika"}
+        url={siteUrl}
+        searchUrl={`${siteUrl}/shop`}
+      />
+
       {/* 1. Hero Section */}
       <HeroSection />
 
       {/* 2. New Arrivals Section */}
-      <NewArrivals products={products} loading={loading} />
+      <NewArrivals products={products} loading={false} />
 
       {/* 3. Featured Collection Section */}
-      <FeaturedProducts products={products} loading={loading} />
+      <FeaturedProducts products={products} loading={false} />
 
       {/* 4. Shop By Category Section */}
       <CategorySection categories={categories} />
 
-      {/* 6. Footer CTA Section */}
+      {/* 5. Footer CTA Section */}
       <section className="py-14 sm:py-20 bg-popover/40 border-b border-border/50 text-center">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="w-12 h-12 rounded-full bg-primary/10 border border-primary/30 text-foreground flex items-center justify-center mx-auto mb-4">

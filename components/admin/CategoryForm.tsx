@@ -2,8 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import { ArrowLeft, Save, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, Save, Globe, EyeOff } from "lucide-react";
 import { AdminCard, AdminButton, AdminInput } from "@/components/admin";
 import { SingleImageUploader } from "./SingleImageUploader";
 import { toast } from "react-hot-toast";
@@ -36,6 +35,14 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
     typeof initialData?.sortOrder === "number" ? initialData.sortOrder : 0
   );
 
+  // SEO State
+  const [metaTitle, setMetaTitle] = useState(initialData?.metaTitle || "");
+  const [metaDescription, setMetaDescription] = useState(initialData?.metaDescription || "");
+  const [keywords, setKeywords] = useState(initialData?.keywords || "");
+  const [canonicalUrl, setCanonicalUrl] = useState(initialData?.canonicalUrl || "");
+  const [ogImage, setOgImage] = useState(initialData?.ogImage || "");
+  const [noIndex, setNoIndex] = useState(Boolean(initialData?.noIndex));
+
   const handleNameChange = (val: string) => {
     setName(val);
     if (!initialData && !slug) {
@@ -63,12 +70,16 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
       image: image || undefined,
       isActive,
       sortOrder: Number(sortOrder) || 0,
+      metaTitle: metaTitle || undefined,
+      metaDescription: metaDescription || undefined,
+      keywords: keywords || undefined,
+      canonicalUrl: canonicalUrl || undefined,
+      ogImage: ogImage || undefined,
+      noIndex,
     };
 
     onSubmit(payload);
   };
-
-  const isValidUrl = image.startsWith("http://") || image.startsWith("https://") || image.startsWith("/");
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 w-full pb-20">
@@ -150,6 +161,70 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
               description="PNG, JPG, or WEBP up to 5MB. Will be saved to Supabase categories storage."
             />
           </AdminCard>
+
+          {/* Category SEO Settings */}
+          <AdminCard
+            title="Search Engine Optimization (SEO)"
+            description="Manage category meta titles, meta descriptions, canonical URL, and social sharing cards"
+          >
+            <div className="space-y-4">
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-stone-700">SEO Meta Title</label>
+                  <span className={`text-[10px] ${metaTitle.length > 60 ? "text-amber-600 font-bold" : "text-stone-400"}`}>
+                    {metaTitle.length} / 60 chars (Recommended: 50–60)
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  placeholder="e.g. Designer Sarees & Indian Ethnic Wear | Premika"
+                  value={metaTitle}
+                  onChange={(e) => setMetaTitle(e.target.value)}
+                  className="w-full px-3.5 py-2.5 text-xs border border-stone-300 rounded-xl focus:outline-none focus:border-[#B67B5C] text-stone-900"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-stone-700">SEO Meta Description</label>
+                  <span className={`text-[10px] ${metaDescription.length > 160 ? "text-amber-600 font-bold" : "text-stone-400"}`}>
+                    {metaDescription.length} / 160 chars (Recommended: 150–160)
+                  </span>
+                </div>
+                <textarea
+                  rows={3}
+                  placeholder="Explore our curated collection of handcrafted silk sarees, kurtis, and ethnic ensembles."
+                  value={metaDescription}
+                  onChange={(e) => setMetaDescription(e.target.value)}
+                  className="w-full p-3 bg-white border border-stone-300 rounded-xl text-xs text-stone-900 focus:outline-none focus:border-[#B67B5C]"
+                />
+              </div>
+
+              <AdminInput
+                label="Keywords (Comma separated)"
+                placeholder="sarees, ethnic wear, silk sarees, kurtis"
+                value={keywords}
+                onChange={(e) => setKeywords(e.target.value)}
+              />
+
+              <AdminInput
+                label="Canonical URL Override"
+                placeholder="https://premika.shop/category/sarees"
+                value={canonicalUrl}
+                onChange={(e) => setCanonicalUrl(e.target.value)}
+              />
+
+              <SingleImageUploader
+                bucket="categories"
+                folder="seo"
+                value={ogImage}
+                onChange={(url) => setOgImage(url)}
+                label="Custom Open Graph Image (OG Image)"
+                description="Specific image for social media sharing cards on WhatsApp, Facebook, and Twitter."
+                aspectRatio="landscape"
+              />
+            </div>
+          </AdminCard>
         </div>
 
         {/* Right 1/3 Sidebar Column */}
@@ -174,6 +249,27 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
                 onChange={(e) => setSortOrder(Number(e.target.value))}
               />
             </div>
+          </AdminCard>
+
+          {/* Robots Indexing Settings */}
+          <AdminCard title="Search Engine Indexing" description="Control search robot crawling for this category">
+            <label className="flex items-start gap-3 p-4 bg-amber-50/50 rounded-2xl border border-amber-200/80 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={noIndex}
+                onChange={(e) => setNoIndex(e.target.checked)}
+                className="mt-0.5 rounded text-amber-600 focus:ring-amber-500"
+              />
+              <div>
+                <span className="text-xs font-bold text-stone-900 flex items-center gap-1.5">
+                  <EyeOff size={14} className="text-amber-600" />
+                  <span>Exclude from Search Engines (noindex)</span>
+                </span>
+                <p className="text-[11px] text-stone-600 mt-0.5">
+                  Instructs search engines like Google not to index this category page.
+                </p>
+              </div>
+            </label>
           </AdminCard>
         </div>
       </div>

@@ -385,6 +385,12 @@ export class ProductRepository {
           newArrival: payload.newArrival || false,
           hasHeightOptions: payload.hasHeightOptions || false,
           isActive: payload.isActive ?? true,
+          metaTitle: payload.metaTitle || null,
+          metaDescription: payload.metaDescription || null,
+          keywords: payload.keywords || null,
+          canonicalUrl: payload.canonicalUrl || null,
+          ogImage: payload.ogImage || null,
+          noIndex: Boolean(payload.noIndex),
         })
         .returning();
 
@@ -454,6 +460,12 @@ export class ProductRepository {
           newArrival: payload.newArrival,
           hasHeightOptions: payload.hasHeightOptions,
           isActive: payload.isActive,
+          metaTitle: payload.metaTitle || null,
+          metaDescription: payload.metaDescription || null,
+          keywords: payload.keywords || null,
+          canonicalUrl: payload.canonicalUrl || null,
+          ogImage: payload.ogImage || null,
+          noIndex: Boolean(payload.noIndex),
           updatedAt: new Date(),
         })
         .where(eq(products.id, id))

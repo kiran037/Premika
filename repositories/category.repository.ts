@@ -179,6 +179,12 @@ export class CategoryRepository {
         image: payload.image || null,
         isActive: payload.isActive ?? true,
         sortOrder: payload.sortOrder || 0,
+        metaTitle: payload.metaTitle || null,
+        metaDescription: payload.metaDescription || null,
+        keywords: payload.keywords || null,
+        canonicalUrl: payload.canonicalUrl || null,
+        ogImage: payload.ogImage || null,
+        noIndex: Boolean(payload.noIndex),
       })
       .returning();
 
@@ -198,6 +204,12 @@ export class CategoryRepository {
         image: payload.image || null,
         isActive: payload.isActive,
         sortOrder: payload.sortOrder,
+        metaTitle: payload.metaTitle || null,
+        metaDescription: payload.metaDescription || null,
+        keywords: payload.keywords || null,
+        canonicalUrl: payload.canonicalUrl || null,
+        ogImage: payload.ogImage || null,
+        noIndex: Boolean(payload.noIndex),
         updatedAt: new Date(),
       })
       .where(eq(categories.id, id))

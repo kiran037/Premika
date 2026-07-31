@@ -1,4 +1,5 @@
 import { CategoryRepository } from "@/repositories/category.repository";
+import { categorySeoSchema } from "@/lib/validations/seo";
 
 export class CategoryService {
   /**
@@ -36,17 +37,29 @@ export class CategoryService {
   }
 
   /**
-   * Admin: Create category
+   * Admin: Create category with validated SEO fields
    */
   static async createAdminCategory(payload: any) {
-    return await CategoryRepository.createAdminCategory(payload);
+    const validatedSeo = categorySeoSchema.partial().safeParse(payload);
+    const seoFields = validatedSeo.success ? validatedSeo.data : {};
+
+    return await CategoryRepository.createAdminCategory({
+      ...payload,
+      ...seoFields,
+    });
   }
 
   /**
-   * Admin: Update category
+   * Admin: Update category with validated SEO fields
    */
   static async updateAdminCategory(id: string, payload: any) {
-    return await CategoryRepository.updateAdminCategory(id, payload);
+    const validatedSeo = categorySeoSchema.partial().safeParse(payload);
+    const seoFields = validatedSeo.success ? validatedSeo.data : {};
+
+    return await CategoryRepository.updateAdminCategory(id, {
+      ...payload,
+      ...seoFields,
+    });
   }
 
   /**

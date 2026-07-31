@@ -1,4 +1,6 @@
 import { StoreRepository } from "@/repositories/store.repository";
+import { SeoService } from "@/services/seo.service";
+import { GlobalSeoInput } from "@/lib/validations/seo";
 import {
   StoreSettingsInput,
   StoreContactsInput,
@@ -28,6 +30,15 @@ export class StoreService {
 
   static async updateStoreSettings(input: StoreSettingsInput) {
     return StoreRepository.upsertStoreSettings(input);
+  }
+
+  // Global SEO Settings
+  static async getSeoSettings() {
+    return SeoService.getSeoSettings();
+  }
+
+  static async updateSeoSettings(input: GlobalSeoInput) {
+    return SeoService.updateSeoSettings(input);
   }
 
   // Contact Information

@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, Save, Plus, Trash2, Tag, Layers, CheckCircle } from "lucide-react";
+import { ArrowLeft, Save, Plus, Trash2, EyeOff } from "lucide-react";
 import { AdminCard, AdminButton, AdminInput } from "@/components/admin";
 import { ImageUploader } from "@/components/admin/ImageUploader";
+import { SingleImageUploader } from "@/components/admin/SingleImageUploader";
 import { toast } from "react-hot-toast";
 
 export interface ProductFormProps {
@@ -62,6 +63,14 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     typeof initialData?.product?.isActive === "boolean" ? initialData.product.isActive : true
   );
 
+  // SEO State
+  const [metaTitle, setMetaTitle] = useState(initialData?.product?.metaTitle || "");
+  const [metaDescription, setMetaDescription] = useState(initialData?.product?.metaDescription || "");
+  const [keywords, setKeywords] = useState(initialData?.product?.keywords || "");
+  const [canonicalUrl, setCanonicalUrl] = useState(initialData?.product?.canonicalUrl || "");
+  const [ogImage, setOgImage] = useState(initialData?.product?.ogImage || "");
+  const [noIndex, setNoIndex] = useState(Boolean(initialData?.product?.noIndex));
+
   // Arrays
   const [images, setImages] = useState<string[]>(
     initialData?.images && initialData.images.length > 0
@@ -111,8 +120,13 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!name || !slug || !categoryId || !price) {
-      toast.error("Please fill in required fields (Name, Slug, Category, Price)");
+    if (!name || !slug) {
+      toast.error("Please fill in required fields (Product Name and Slug)");
+      return;
+    }
+
+    if (!price || isNaN(Number(price))) {
+      toast.error("Please enter a valid price");
       return;
     }
 
@@ -139,13 +153,16 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       newArrival,
       hasHeightOptions,
       isActive,
+      metaTitle: metaTitle || undefined,
+      metaDescription: metaDescription || undefined,
+      keywords: keywords || undefined,
+      canonicalUrl: canonicalUrl || undefined,
+      ogImage: ogImage || undefined,
+      noIndex,
       images: filteredImages,
       sizes,
       heights: hasHeightOptions ? heights : [],
     };
-
-    console.log("Images:", payload.images);
-    console.log("Payload:", JSON.stringify(payload, null, 2));
 
     onSubmit(payload);
   };
@@ -210,29 +227,29 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                   required
                 />
                 <AdminInput
-                  label="SKU (Stock Keeping Unit)"
-                  placeholder="PRM-KUR-001"
+                  label="SKU Code"
+                  placeholder="PRM-KRT-001"
                   value={sku}
                   onChange={(e) => setSku(e.target.value)}
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-1">Short Summary</label>
-                <input
-                  type="text"
-                  placeholder="Brief 1-line summary for category cards..."
+                <label className="block text-xs font-semibold text-stone-700 mb-1">Short Description</label>
+                <textarea
+                  rows={2}
+                  placeholder="Brief summary for product cards and checkout lists..."
                   value={shortDescription}
                   onChange={(e) => setShortDescription(e.target.value)}
-                  className="w-full px-3 py-2 bg-white border border-stone-300 rounded-xl text-xs text-stone-900 focus:outline-none focus:border-[#B67B5C]"
+                  className="w-full p-3 bg-white border border-stone-300 rounded-xl text-xs text-stone-900 focus:outline-none focus:border-[#B67B5C]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-1">Detailed Description</label>
+                <label className="block text-xs font-semibold text-stone-700 mb-1">Full Product Details</label>
                 <textarea
-                  rows={4}
-                  placeholder="Complete fabric specifications, care instructions, and fitting details..."
+                  rows={6}
+                  placeholder="Detailed specifications, weave details, styling recommendations..."
                   value={longDescription}
                   onChange={(e) => setLongDescription(e.target.value)}
                   className="w-full p-3 bg-white border border-stone-300 rounded-xl text-xs text-stone-900 focus:outline-none focus:border-[#B67B5C]"
@@ -241,107 +258,51 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             </div>
           </AdminCard>
 
-          {/* Product Media Gallery */}
-          <AdminCard
-            title="Product Images"
-            description="Upload your product images"
-          >
-            {/* <div className="space-y-6">
-              {images.map((image, index) => (
-                <div key={index} className="space-y-2">
-                  <ImageUploader
-                    bucket="products"
-                    folder="products"
-                    label={`Image ${index + 1}`}
-                    value={image}
-                    onChange={(url) => {
-                      const updated = [...images];
-                      updated[index] = url;
-                      setImages(updated);
-                    }}
-                  />
-
-                  {images.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setImages(images.filter((_, i) => i !== index))
-                      }
-                      className="text-red-600 text-xs font-medium"
-                    >
-                      Remove Image
-                    </button>
-                  )}
-                </div>
-              ))}
-
-              <AdminButton
-                type="button"
-                variant="outline"
-                onClick={() => setImages([...images, ""])}
-              >
-                <Plus size={14} className="mr-2" />
-                Add Another Image
-              </AdminButton>
-            </div> */}
-
+          {/* Product Gallery Images */}
+          <AdminCard title="Product Media & Gallery" description="Manage gallery images for product listing and detail pages">
             <ImageUploader
-              bucket="products"
-              folder="products"
               images={images}
-              onChange={setImages}
+              onChange={(urls) => setImages(urls)}
             />
           </AdminCard>
 
-          {/* Size Variants & Stock */}
-          <AdminCard title="Size Variants & Inventory" description="Available size options and stock count">
+          {/* Sizes & Variants */}
+          <AdminCard title="Size Variants & Stock" description="Manage inventory and availability per size option">
             <div className="space-y-3">
-              {sizes.map((s, idx) => (
-                <div key={idx} className="flex items-center gap-4 bg-stone-50 p-4 rounded-2xl border border-stone-200">
-                  <input
-                    type="text"
-                    placeholder="Size"
-                    value={s.size}
-                    onChange={(e) => {
-                      const updated = [...sizes];
-                      updated[idx].size = e.target.value;
-                      setSizes(updated);
-                    }}
-                    className="w-24 px-3 py-1.5 bg-white border border-stone-300 rounded-lg text-xs font-semibold"
-                  />
+              {sizes.map((s, index) => (
+                <div key={index} className="flex items-center gap-3 p-3 bg-stone-50 rounded-xl border border-stone-200">
+                  <span className="w-12 text-xs font-bold text-stone-800">{s.size}</span>
                   <input
                     type="number"
-                    placeholder="Stock"
                     value={s.stock}
                     onChange={(e) => {
-                      const updated = [...sizes];
-                      updated[idx].stock = Number(e.target.value);
-                      setSizes(updated);
+                      const copy = [...sizes];
+                      copy[index].stock = Number(e.target.value);
+                      setSizes(copy);
                     }}
-                    className="w-28 px-3 py-1.5 bg-white border border-stone-300 rounded-lg text-xs"
+                    placeholder="Stock"
+                    className="w-24 px-3 py-1.5 bg-white border border-stone-300 rounded-lg text-xs"
                   />
-                  <label className="flex items-center gap-1.5 text-xs text-stone-700 cursor-pointer select-none">
+                  <label className="flex items-center gap-1.5 text-xs text-stone-700 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={s.isAvailable}
                       onChange={(e) => {
-                        const updated = [...sizes];
-                        updated[idx].isAvailable = e.target.checked;
-                        setSizes(updated);
+                        const copy = [...sizes];
+                        copy[index].isAvailable = e.target.checked;
+                        setSizes(copy);
                       }}
                       className="rounded text-[#B67B5C]"
                     />
                     <span>Available</span>
                   </label>
-                  {sizes.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => setSizes(sizes.filter((_, i) => i !== idx))}
-                      className="ml-auto text-stone-400 hover:text-red-600 p-1"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => setSizes(sizes.filter((_, i) => i !== index))}
+                    className="ml-auto text-stone-400 hover:text-red-600 transition"
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </div>
               ))}
 
@@ -355,6 +316,70 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 <Plus size={14} className="mr-1" />
                 <span>Add Size Variant</span>
               </AdminButton>
+            </div>
+          </AdminCard>
+
+          {/* Product SEO Settings */}
+          <AdminCard
+            title="Search Engine Optimization (SEO)"
+            description="Manage product meta title, meta description, canonical URL, and custom social sharing cards"
+          >
+            <div className="space-y-4">
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-stone-700">SEO Meta Title</label>
+                  <span className={`text-[10px] ${metaTitle.length > 60 ? "text-amber-600 font-bold" : "text-stone-400"}`}>
+                    {metaTitle.length} / 60 chars (Recommended: 50–60)
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  placeholder="e.g. Handcrafted Silk Kurta Set | Premika"
+                  value={metaTitle}
+                  onChange={(e) => setMetaTitle(e.target.value)}
+                  className="w-full px-3.5 py-2.5 text-xs border border-stone-300 rounded-xl focus:outline-none focus:border-[#B67B5C] text-stone-900"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-stone-700">SEO Meta Description</label>
+                  <span className={`text-[10px] ${metaDescription.length > 160 ? "text-amber-600 font-bold" : "text-stone-400"}`}>
+                    {metaDescription.length} / 160 chars (Recommended: 150–160)
+                  </span>
+                </div>
+                <textarea
+                  rows={3}
+                  placeholder="Shop timeless handcrafted silk kurta sets crafted with premium fabric and elegant detailing."
+                  value={metaDescription}
+                  onChange={(e) => setMetaDescription(e.target.value)}
+                  className="w-full p-3 bg-white border border-stone-300 rounded-xl text-xs text-stone-900 focus:outline-none focus:border-[#B67B5C]"
+                />
+              </div>
+
+              <AdminInput
+                label="Keywords (Comma separated)"
+                placeholder="kurta set, silk kurta, ethnic wear, womens apparel"
+                value={keywords}
+                onChange={(e) => setKeywords(e.target.value)}
+              />
+
+              <AdminInput
+                label="Canonical URL Override"
+                placeholder="https://premika.shop/products/silk-kurta-set"
+                value={canonicalUrl}
+                onChange={(e) => setCanonicalUrl(e.target.value)}
+              />
+
+              <SingleImageUploader
+                bucket="products"
+                folder="seo"
+                value={ogImage}
+                onChange={(url) => setOgImage(url)}
+                label="Custom Open Graph Image (OG Image)"
+                description="Custom preview image for social sharing links (WhatsApp, Facebook, LinkedIn)."
+                aspectRatio="landscape"
+              />
             </div>
           </AdminCard>
         </div>
@@ -490,6 +515,27 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 />
               </label>
             </div>
+          </AdminCard>
+
+          {/* Search Engine Indexing */}
+          <AdminCard title="Search Engine Indexing" description="Control search engine crawling for this product">
+            <label className="flex items-start gap-3 p-3 bg-amber-50/50 rounded-xl border border-amber-200/80 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={noIndex}
+                onChange={(e) => setNoIndex(e.target.checked)}
+                className="mt-0.5 rounded text-amber-600 focus:ring-amber-500"
+              />
+              <div>
+                <span className="text-xs font-bold text-stone-900 flex items-center gap-1.5">
+                  <EyeOff size={14} className="text-amber-600" />
+                  <span>Hide from Search Engines (noindex)</span>
+                </span>
+                <p className="text-[10px] text-stone-600 mt-0.5">
+                  Instructs search robots not to index this product page.
+                </p>
+              </div>
+            </label>
           </AdminCard>
         </div>
       </div>
