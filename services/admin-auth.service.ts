@@ -4,17 +4,13 @@ import { AdminRepository } from "@/repositories/admin.repository";
 function getSessionSecret(): string {
   const secret = process.env.ADMIN_SESSION_SECRET;
   if (!secret) {
-    if (process.env.NODE_ENV === "production") {
-      throw new Error(
-        "CRITICAL SECURITY ERROR: ADMIN_SESSION_SECRET environment variable is missing in production!"
-      );
-    }
-    return "premika_dev_admin_session_secret_key_2025";
+    throw new Error(
+      "CRITICAL CONFIGURATION ERROR: ADMIN_SESSION_SECRET environment variable is missing!"
+    );
   }
   return secret;
 }
 
-const SESSION_SECRET = getSessionSecret();
 export const ADMIN_COOKIE_NAME = "admin_session_token";
 
 export interface AdminSessionPayload {
@@ -27,53 +23,72 @@ export interface AdminSessionPayload {
 
 export class AdminAuthService {
   /**
-   * Hash password with PBKDF2 salt
+   * Hash password with PBKDF2 salt (210,000 iterations for SHA512)
    */
   static hashPassword(password: string): string {
     const salt = crypto.randomBytes(16).toString("hex");
+    const iterations = 210000;
     const hash = crypto
-      .pbkdf2Sync(password, salt, 10000, 64, "sha512")
+      .pbkdf2Sync(password, salt, iterations, 64, "sha512")
       .toString("hex");
-    return `${salt}:${hash}`;
+    return `${salt}:${hash}:${iterations}`;
   }
 
   /**
-   * Verify candidate password against stored hash
+   * Verify candidate password against stored hash (timing-safe comparison, supports legacy 10,000 iteration hashes)
    */
   static verifyPassword(password: string, storedHash: string): boolean {
     if (!storedHash || !storedHash.includes(":")) return false;
-    const [salt, originalHash] = storedHash.split(":");
+    const parts = storedHash.split(":");
+    const salt = parts[0];
+    const originalHash = parts[1];
+    const iterations = parts[2] ? parseInt(parts[2], 10) : 10000;
+
+    if (!salt || !originalHash) return false;
+
     const candidateHash = crypto
-      .pbkdf2Sync(password, salt, 10000, 64, "sha512")
+      .pbkdf2Sync(password, salt, iterations, 64, "sha512")
       .toString("hex");
-    return candidateHash === originalHash;
+
+    const candBuf = Buffer.from(candidateHash, "hex");
+    const origBuf = Buffer.from(originalHash, "hex");
+
+    if (candBuf.length !== origBuf.length) return false;
+    return crypto.timingSafeEqual(candBuf, origBuf);
   }
 
   /**
    * Create signed session token string
    */
   static createSessionToken(payload: AdminSessionPayload): string {
+    const secret = getSessionSecret();
     const dataStr = Buffer.from(JSON.stringify(payload)).toString("base64url");
     const signature = crypto
-      .createHmac("sha256", SESSION_SECRET)
+      .createHmac("sha256", secret)
       .update(dataStr)
       .digest("hex");
     return `${dataStr}.${signature}`;
   }
 
   /**
-   * Verify signed session token string
+   * Verify signed session token string using timing-safe signature comparison
    */
   static verifySessionToken(token: string): AdminSessionPayload | null {
     try {
       if (!token || !token.includes(".")) return null;
+      const secret = getSessionSecret();
       const [dataStr, signature] = token.split(".");
       const expectedSignature = crypto
-        .createHmac("sha256", SESSION_SECRET)
+        .createHmac("sha256", secret)
         .update(dataStr)
         .digest("hex");
 
-      if (signature !== expectedSignature) return null;
+      const sigBuf = Buffer.from(signature, "hex");
+      const expBuf = Buffer.from(expectedSignature, "hex");
+
+      if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
+        return null;
+      }
 
       const payload: AdminSessionPayload = JSON.parse(
         Buffer.from(dataStr, "base64url").toString("utf-8")

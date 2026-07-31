@@ -2,17 +2,19 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 const ADMIN_COOKIE_NAME = "admin_session_token";
-const SESSION_SECRET = process.env.ADMIN_SESSION_SECRET || "premika_super_secret_admin_session_key_2025";
 
 /**
- * Verify HMAC SHA-256 token signature using Edge-compatible Web Crypto API
+ * Verify HMAC SHA-256 token signature using Edge-compatible Web Crypto API with constant-time comparison
  */
 async function verifyTokenSignature(dataStr: string, signature: string): Promise<boolean> {
+  const secret = process.env.ADMIN_SESSION_SECRET;
+  if (!secret || !signature) return false;
+
   try {
     const encoder = new TextEncoder();
     const key = await crypto.subtle.importKey(
       "raw",
-      encoder.encode(SESSION_SECRET),
+      encoder.encode(secret),
       { name: "HMAC", hash: "SHA-256" },
       false,
       ["sign"]
@@ -26,7 +28,13 @@ async function verifyTokenSignature(dataStr: string, signature: string): Promise
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("");
 
-    return signature === expectedSignature;
+    if (signature.length !== expectedSignature.length) return false;
+
+    let diff = 0;
+    for (let i = 0; i < signature.length; i++) {
+      diff |= signature.charCodeAt(i) ^ expectedSignature.charCodeAt(i);
+    }
+    return diff === 0;
   } catch {
     return false;
   }

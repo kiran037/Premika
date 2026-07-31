@@ -3,8 +3,37 @@ import { validateCoupon } from "@/lib/coupons/validate-coupon";
 
 export const dynamic = "force-dynamic";
 
+const couponRateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+function isRateLimited(ip: string, maxRequests = 30, windowMs = 60000): boolean {
+  const now = Date.now();
+  const record = couponRateLimitMap.get(ip);
+
+  if (!record || now > record.resetAt) {
+    couponRateLimitMap.set(ip, { count: 1, resetAt: now + windowMs });
+    return false;
+  }
+
+  if (record.count >= maxRequests) {
+    return true;
+  }
+
+  record.count += 1;
+  return false;
+}
+
 export async function POST(req: NextRequest) {
   try {
+    const rawIp = req.headers.get("x-forwarded-for")?.split(",")[0] || req.headers.get("x-real-ip") || "127.0.0.1";
+    const ipAddress = rawIp.trim();
+
+    if (isRateLimited(ipAddress, 30, 60000)) {
+      return NextResponse.json(
+        { success: false, valid: false, message: "Too many coupon validation requests. Please try again later." },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const { code, couponCode, subtotal } = body;
 

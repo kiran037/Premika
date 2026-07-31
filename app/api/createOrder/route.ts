@@ -5,8 +5,37 @@ import { StoreService } from "@/services/store.service";
 
 export const dynamic = "force-dynamic";
 
+const orderRateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+function isRateLimited(ip: string, maxRequests = 20, windowMs = 60000): boolean {
+  const now = Date.now();
+  const record = orderRateLimitMap.get(ip);
+
+  if (!record || now > record.resetAt) {
+    orderRateLimitMap.set(ip, { count: 1, resetAt: now + windowMs });
+    return false;
+  }
+
+  if (record.count >= maxRequests) {
+    return true;
+  }
+
+  record.count += 1;
+  return false;
+}
+
 export async function POST(req: NextRequest) {
   try {
+    const rawIp = req.headers.get("x-forwarded-for")?.split(",")[0] || req.headers.get("x-real-ip") || "127.0.0.1";
+    const ipAddress = rawIp.trim();
+
+    if (isRateLimited(ipAddress, 20, 60000)) {
+      return NextResponse.json(
+        { success: false, message: "Too many order requests. Please try again later." },
+        { status: 429 }
+      );
+    }
+
     // Maintenance Mode Check
     const storeSettings = await StoreService.getStoreSettings();
     if (storeSettings?.maintenanceMode) {
