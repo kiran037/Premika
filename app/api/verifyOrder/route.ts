@@ -1,11 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PaymentService } from "@/services/payment.service";
 import { recordCouponUsage } from "@/lib/coupons/validate-coupon";
+import { StoreService } from "@/services/store.service";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
+    // Maintenance Mode Check
+    const storeSettings = await StoreService.getStoreSettings();
+    if (storeSettings?.maintenanceMode) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "The store is currently under maintenance. Please try again later.",
+        },
+        { status: 503 }
+      );
+    }
+
     const payload = await req.json();
     const result = await PaymentService.verifyPaymentSignature(payload);
 

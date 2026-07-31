@@ -48,7 +48,7 @@ export default function AdminOrdersPage() {
     try {
       const params = new URLSearchParams();
       params.set("page", page.toString());
-      params.set("limit", "10");
+      params.set("limit", "25");
       if (search) params.set("search", search);
       if (orderStatusFilter !== "all") params.set("orderStatus", orderStatusFilter);
       if (paymentStatusFilter !== "all") params.set("paymentStatus", paymentStatusFilter);

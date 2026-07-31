@@ -35,11 +35,7 @@ async function verifyTokenSignature(dataStr: string, signature: string): Promise
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Only apply middleware logic to /admin paths
-  if (!pathname.startsWith("/admin")) {
-    return NextResponse.next();
-  }
-
+  // 1. Verify Admin Session Authentication
   const token = request.cookies.get(ADMIN_COOKIE_NAME)?.value;
   let isAuthenticated = false;
 
@@ -64,23 +60,75 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  const isLoginPage = pathname === "/admin/login";
+  // 2. Admin Panel Authentication Guard
+  if (pathname.startsWith("/admin")) {
+    const isLoginPage = pathname === "/admin/login";
 
-  // 1. Unauthenticated admin trying to access protected dashboard -> Redirect to login
-  if (!isAuthenticated && !isLoginPage) {
-    const loginUrl = new URL("/admin/login", request.url);
-    loginUrl.searchParams.set("from", pathname);
-    return NextResponse.redirect(loginUrl);
+    // Unauthenticated admin -> Redirect to login
+    if (!isAuthenticated && !isLoginPage) {
+      const loginUrl = new URL("/admin/login", request.url);
+      loginUrl.searchParams.set("from", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    // Authenticated admin visiting login -> Redirect to dashboard
+    if (isAuthenticated && isLoginPage) {
+      return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+    }
+
+    return NextResponse.next();
   }
 
-  // 2. Authenticated admin visiting login page -> Redirect to dashboard
-  if (isAuthenticated && isLoginPage) {
-    return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+  // Allow admin APIs and maintenance status API to pass through
+  if (pathname.startsWith("/api/admin") || pathname === "/api/maintenance") {
+    return NextResponse.next();
+  }
+
+  // 3. Maintenance Mode Guard for Public Storefront
+  // Bypass maintenance checks for authenticated admins
+  if (isAuthenticated) {
+    return NextResponse.next();
+  }
+
+  // Exempt routes & static assets from maintenance redirect
+  const isExemptRoute =
+    pathname === "/maintenance" ||
+    pathname === "/favicon.ico" ||
+    pathname === "/robots.txt" ||
+    pathname === "/sitemap.xml" ||
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/logo.png") ||
+    /\.(png|jpg|jpeg|webp|svg|gif|ico|css|js|woff|woff2|ttf)$/i.test(pathname);
+
+  if (isExemptRoute) {
+    return NextResponse.next();
+  }
+
+  // Fetch Maintenance Mode status from Node.js API endpoint
+  try {
+    const maintenanceApiUrl = new URL("/api/maintenance", request.url);
+    const res = await fetch(maintenanceApiUrl.toString(), {
+      headers: {
+        accept: "application/json",
+      },
+      next: { revalidate: 0 },
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.maintenanceMode) {
+        return NextResponse.redirect(new URL("/maintenance", request.url));
+      }
+    }
+  } catch (err) {
+    console.error("Error fetching maintenance status in middleware:", err);
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico).*)",
+  ],
 };

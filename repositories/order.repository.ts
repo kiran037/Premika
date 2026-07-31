@@ -375,7 +375,7 @@ export class OrderRepository {
       items = items.filter((i) => i.payment?.status === query.paymentStatus);
     }
 
-    return { items, total: items.length, page, limit, totalPages: Math.ceil(items.length / limit) || 1 };
+    return { items, total, page, limit, totalPages: Math.ceil(total / limit) || 1 };
   }
 
   /**

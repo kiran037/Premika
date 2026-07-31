@@ -11,9 +11,19 @@ export interface CustomerQueryOptions {
   sortBy?: "spend_desc" | "orders_desc" | "newest" | "name_asc";
 }
 
+// Valid order statuses that represent confirmed revenue / valid completed sales
+const VALID_REVENUE_STATUSES = [
+  "confirmed",
+  "processing",
+  "packed",
+  "shipped",
+  "out_for_delivery",
+  "delivered",
+] as const;
+
 export class CustomerRepository {
   /**
-   * Helper to derive dynamic tags for a customer
+   * Helper to derive dynamic tags for a customer based on completed sales
    */
   static deriveCustomerTags(cust: {
     createdAt: Date;
@@ -88,16 +98,20 @@ export class CustomerRepository {
 
       customerOrders.forEach((ord) => {
         const existing = ordersMap.get(ord.customerId);
+        const isValidSale = (VALID_REVENUE_STATUSES as readonly string[]).includes(ord.status);
+
         if (!existing) {
           ordersMap.set(ord.customerId, {
-            totalOrders: 1,
-            lifetimeSpend: ord.total,
+            totalOrders: isValidSale ? 1 : 0,
+            lifetimeSpend: isValidSale ? ord.total : 0,
             lastOrderDate: ord.createdAt,
             latestStatus: ord.status,
           });
         } else {
-          existing.totalOrders += 1;
-          existing.lifetimeSpend += ord.total;
+          if (isValidSale) {
+            existing.totalOrders += 1;
+            existing.lifetimeSpend += ord.total;
+          }
         }
       });
     }
@@ -193,6 +207,12 @@ export class CustomerRepository {
 
     const orderIds = customerOrders.map((o) => o.id);
 
+    // Filter valid sales orders for analytics calculations
+    const validSalesOrders = customerOrders.filter((o) =>
+      (VALID_REVENUE_STATUSES as readonly string[]).includes(o.status)
+    );
+    const validOrderIdsSet = new Set(validSalesOrders.map((o) => o.id));
+
     let customerPayments: any[] = [];
     let itemsCountMap = new Map<string, number>();
     let topProductsMap = new Map<string, { name: string; qty: number }>();
@@ -208,11 +228,14 @@ export class CustomerRepository {
       itemRows.forEach((item) => {
         itemsCountMap.set(item.orderId, (itemsCountMap.get(item.orderId) || 0) + item.quantity);
 
-        const prod = topProductsMap.get(item.productId);
-        if (!prod) {
-          topProductsMap.set(item.productId, { name: item.productName, qty: item.quantity });
-        } else {
-          prod.qty += item.quantity;
+        // Only include items from valid completed sales in Top Products
+        if (validOrderIdsSet.has(item.orderId)) {
+          const prod = topProductsMap.get(item.productId);
+          if (!prod) {
+            topProductsMap.set(item.productId, { name: item.productName, qty: item.quantity });
+          } else {
+            prod.qty += item.quantity;
+          }
         }
       });
     }
@@ -222,13 +245,13 @@ export class CustomerRepository {
       itemCount: itemsCountMap.get(o.id) || 0,
     }));
 
-    // Calculate Customer Analytics
-    const totalOrders = customerOrders.length;
-    const lifetimeSpend = customerOrders.reduce((sum, o) => sum + o.total, 0);
+    // Calculate Customer Analytics (Strictly from Valid Completed Sales)
+    const totalOrders = validSalesOrders.length;
+    const lifetimeSpend = validSalesOrders.reduce((sum, o) => sum + o.total, 0);
     const aov = totalOrders > 0 ? Math.round(lifetimeSpend / totalOrders) : 0;
-    const firstOrderDate = totalOrders > 0 ? customerOrders[customerOrders.length - 1].createdAt : null;
-    const lastOrderDate = totalOrders > 0 ? customerOrders[0].createdAt : null;
-    const largestOrder = totalOrders > 0 ? [...customerOrders].sort((a, b) => b.total - a.total)[0] : null;
+    const firstOrderDate = totalOrders > 0 ? validSalesOrders[validSalesOrders.length - 1].createdAt : null;
+    const lastOrderDate = totalOrders > 0 ? validSalesOrders[0].createdAt : null;
+    const largestOrder = totalOrders > 0 ? [...validSalesOrders].sort((a, b) => b.total - a.total)[0] : null;
 
     const topProducts = Array.from(topProductsMap.values())
       .sort((a, b) => b.qty - a.qty)
