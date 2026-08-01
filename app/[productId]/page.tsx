@@ -47,9 +47,9 @@ export async function generateMetadata({
   const metaTitle = p.metaTitle || defaultTitle;
   const metaDescription = p.metaDescription || defaultDescription;
   const keywords = p.keywords
-    ? p.keywords.split(",").map((k) => k.trim()).filter(Boolean)
+    ? p.keywords.split(",").map((k: string) => k.trim()).filter(Boolean)
     : seo?.defaultKeywords
-    ? seo.defaultKeywords.split(",").map((k) => k.trim()).filter(Boolean)
+    ? seo.defaultKeywords.split(",").map((k: string) => k.trim()).filter(Boolean)
     : undefined;
 
   const canonicalUrl = p.canonicalUrl || `${canonicalDomain}/${p.slug || p.id}`;

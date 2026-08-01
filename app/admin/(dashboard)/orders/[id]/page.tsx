@@ -350,7 +350,7 @@ export default function OrderDetailPage() {
               </div>
 
               <div className="flex items-center gap-2 flex-wrap pt-1">
-                {/* <AdminButton
+                <AdminButton
                   type="button"
                   size="sm"
                   variant="primary"
@@ -360,9 +360,9 @@ export default function OrderDetailPage() {
                 >
                   <Package size={14} />
                   <span>{shipment?.trackingNumber ? "Shipment Created" : "Create Delhivery Shipment"}</span>
-                </AdminButton> */}
+                </AdminButton>
 
-                <AdminButton
+                {/* <AdminButton
                   type="button"
                   size="sm"
                   variant="primary"
@@ -371,7 +371,7 @@ export default function OrderDetailPage() {
                 >
                   <Package size={14} />
                   <span>Create Delhivery Shipment (Temporarily Disabled)</span>
-                </AdminButton>
+                </AdminButton> */}
 
                 {shipment?.trackingNumber && (
                   <>

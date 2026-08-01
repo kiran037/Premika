@@ -75,14 +75,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.8,
       }));
 
-    // Filter active products that are NOT marked noIndex
+    // Filter active products
     const productPages: MetadataRoute.Sitemap = productItems
-      .map((item) => item.product)
-      .filter((p) => p.isActive && !p.noIndex)
-      .map((p) => ({
-        url: `${baseUrl}/${encodeURIComponent(p.slug || p.id)}`,
-        lastModified: p.updatedAt ? new Date(p.updatedAt).toISOString() : currentDate,
-        changeFrequency: "weekly",
+      .map((p: any) => ({
+        url: `${baseUrl}/${encodeURIComponent(p.id)}`,
+        lastModified: currentDate,
+        changeFrequency: "weekly" as const,
         priority: 0.9,
       }));
 

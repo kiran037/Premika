@@ -4,28 +4,36 @@ import { eq } from "drizzle-orm";
 
 export class SeoRepository {
   /**
-   * Fetch global SEO settings or initialize default row if empty
+   * Pure read operation: Fetch global SEO settings or return in-memory defaults if empty.
    */
   static async getSeoSettings(): Promise<SeoSettings> {
-    const [settings] = await db.select().from(seoSettings).limit(1);
+    try {
+      const [settings] = await db.select().from(seoSettings).limit(1);
 
-    if (settings) {
-      return settings;
+      if (settings) {
+        return settings;
+      }
+    } catch (err) {
+      console.error("Error reading SEO settings from DB, returning defaults:", err);
     }
 
-    // Auto-create default SEO settings if empty
-    const [newSettings] = await db
-      .insert(seoSettings)
-      .values({
-        siteName: "Premika",
-        titleTemplate: "%s | Premika",
-        defaultMetaTitle: "Premika | Premium Ethnic Wear",
-        defaultMetaDescription: "Prem se bana, Premika ke liye. Thoughtfully crafted Indian ethnic wear.",
-        defaultRobots: "index, follow",
-      })
-      .returning();
-
-    return newSettings;
+    // In-memory fallback object without writing to PostgreSQL during read operations
+    return {
+      id: "default-seo",
+      siteName: "Premika",
+      titleTemplate: "%s | Premika",
+      defaultMetaTitle: "Premika | Premium Ethnic Wear",
+      defaultMetaDescription: "Prem se bana, Premika ke liye. Thoughtfully crafted Indian ethnic wear.",
+      defaultKeywords: "ethnic wear, sarees, kurtis, indian fashion, premika",
+      defaultOgImage: "/logo.png",
+      twitterHandle: "@premika_store",
+      googleVerification: null,
+      bingVerification: null,
+      defaultRobots: "index, follow",
+      canonicalDomain: "https://premika.shop",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
   }
 
   /**
@@ -40,20 +48,40 @@ export class SeoRepository {
   }
 
   /**
-   * Update global SEO settings row
+   * Update global SEO settings row (Upserts safely if table is currently empty)
    */
   static async updateSeoSettings(data: Partial<NewSeoSettings>): Promise<SeoSettings> {
-    const current = await this.getSeoSettings();
+    const [existing] = await db.select().from(seoSettings).limit(1);
 
-    const [updated] = await db
-      .update(seoSettings)
-      .set({
-        ...data,
-        updatedAt: new Date(),
-      })
-      .where(eq(seoSettings.id, current.id))
-      .returning();
-
-    return updated;
+    if (existing) {
+      const [updated] = await db
+        .update(seoSettings)
+        .set({
+          ...data,
+          updatedAt: new Date(),
+        })
+        .where(eq(seoSettings.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      const [inserted] = await db
+        .insert(seoSettings)
+        .values({
+          siteName: data.siteName || "Premika",
+          titleTemplate: data.titleTemplate || "%s | Premika",
+          defaultMetaTitle: data.defaultMetaTitle || "Premika | Premium Ethnic Wear",
+          defaultMetaDescription: data.defaultMetaDescription || "Prem se bana, Premika ke liye. Thoughtfully crafted Indian ethnic wear.",
+          defaultKeywords: data.defaultKeywords || null,
+          defaultOgImage: data.defaultOgImage || null,
+          twitterHandle: data.twitterHandle || null,
+          googleVerification: data.googleVerification || null,
+          bingVerification: data.bingVerification || null,
+          defaultRobots: data.defaultRobots || "index, follow",
+          canonicalDomain: data.canonicalDomain || null,
+          ...data,
+        })
+        .returning();
+      return inserted;
+    }
   }
 }

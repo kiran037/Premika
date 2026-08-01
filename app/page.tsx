@@ -12,6 +12,8 @@ import { CategoryService } from "@/services/category.service";
 import { SeoService } from "@/services/seo.service";
 import { StoreService } from "@/services/store.service";
 
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata(): Promise<Metadata> {
   const seo = await SeoService.getSeoSettings();
 
@@ -59,7 +61,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function Homepage() {
   const [{ items: products }, categories, seo, storeSettings] = await Promise.all([
-    ProductService.getProducts({ limit: 100 }),
+    ProductService.getProducts({ limit: 20 }),
     CategoryService.getCategories(),
     SeoService.getSeoSettings(),
     StoreService.getStoreSettings(),

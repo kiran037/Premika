@@ -1,14 +1,15 @@
+import { cache } from "react";
 import { SeoRepository } from "@/repositories/seo.repository";
 import { SeoSettings, NewSeoSettings } from "@/db/schema/seo";
 import { globalSeoSchema, GlobalSeoInput } from "@/lib/validations/seo";
 
 export class SeoService {
   /**
-   * Retrieve global SEO settings
+   * Retrieve global SEO settings (deduplicated per request turn via React cache)
    */
-  static async getSeoSettings(): Promise<SeoSettings> {
+  static getSeoSettings = cache(async (): Promise<SeoSettings> => {
     return await SeoRepository.getSeoSettings();
-  }
+  });
 
   /**
    * Update global SEO settings with Zod validation

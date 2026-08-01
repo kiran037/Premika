@@ -44,9 +44,9 @@ export async function generateMetadata({
   const metaTitle = categoryRecord?.metaTitle || defaultTitle;
   const metaDescription = categoryRecord?.metaDescription || defaultDescription;
   const keywords = categoryRecord?.keywords
-    ? categoryRecord.keywords.split(",").map((k) => k.trim()).filter(Boolean)
+    ? categoryRecord.keywords.split(",").map((k: string) => k.trim()).filter(Boolean)
     : seo?.defaultKeywords
-    ? seo.defaultKeywords.split(",").map((k) => k.trim()).filter(Boolean)
+    ? seo.defaultKeywords.split(",").map((k: string) => k.trim()).filter(Boolean)
     : undefined;
 
   const canonicalUrl =

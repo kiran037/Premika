@@ -70,7 +70,6 @@ export class ProductService {
       if (cat) {
         categoryIds = [cat.id];
       } else {
-        // Category specified but not found -> return empty set
         return {
           items: [],
           pagination: {

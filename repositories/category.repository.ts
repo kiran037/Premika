@@ -1,5 +1,5 @@
 import { db } from "@/db/client";
-import { categories, products, productImages } from "@/db/schema";
+import { categories, products } from "@/db/schema";
 import { eq, and, asc, desc, count, or, ilike, inArray } from "drizzle-orm";
 
 export class CategoryRepository {
@@ -87,25 +87,63 @@ export class CategoryRepository {
 
     if (query.search) {
       const term = `%${query.search.trim()}%`;
-      conditions.push(or(ilike(categories.name, term), ilike(categories.slug, term))!);
+      conditions.push(
+        or(
+          ilike(categories.name, term),
+          ilike(categories.slug, term),
+          ilike(categories.description, term)
+        )
+      );
     }
 
-    if (typeof query.isActive === "boolean") {
+    if (query.isActive !== undefined) {
       conditions.push(eq(categories.isActive, query.isActive));
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-    let orderByClause = asc(categories.sortOrder);
-    if (query.sortBy === "name_asc") orderByClause = asc(categories.name);
-    else if (query.sortBy === "newest") orderByClause = desc(categories.createdAt);
+    let orderBy;
+    switch (query.sortBy) {
+      case "name_asc":
+        orderBy = asc(categories.name);
+        break;
+      case "newest":
+        orderBy = desc(categories.createdAt);
+        break;
+      case "sortOrder":
+      default:
+        orderBy = asc(categories.sortOrder);
+        break;
+    }
 
-    const [rawCategories, [{ total }]] = await Promise.all([
-      db.select().from(categories).where(whereClause).orderBy(orderByClause).limit(limit).offset(offset),
-      db.select({ total: count() }).from(categories).where(whereClause),
-    ]);
+    const totalResult = await db
+      .select({ totalCount: count() })
+      .from(categories)
+      .where(whereClause);
 
-    const catIds = rawCategories.map((c) => c.id);
+    const total = Number(totalResult[0]?.totalCount || 0);
+
+    if (total === 0) {
+      return {
+        items: [],
+        pagination: {
+          page,
+          limit,
+          total: 0,
+          totalPages: 0,
+        },
+      };
+    }
+
+    const records = await db
+      .select()
+      .from(categories)
+      .where(whereClause)
+      .orderBy(orderBy)
+      .limit(limit)
+      .offset(offset);
+
+    const catIds = records.map((c) => c.id);
     let countsMap = new Map<string, number>();
 
     if (catIds.length > 0) {
@@ -121,7 +159,7 @@ export class CategoryRepository {
       countsMap = new Map(counts.map((item) => [item.categoryId, Number(item.total)]));
     }
 
-    let items = rawCategories.map((cat) => ({
+    const items = records.map((cat) => ({
       ...cat,
       productCount: countsMap.get(cat.id) || 0,
     }));
@@ -130,165 +168,102 @@ export class CategoryRepository {
       items.sort((a, b) => b.productCount - a.productCount);
     }
 
-    return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
-  }
-
-  /**
-   * Admin: Find single category by ID with attached products list
-   */
-  static async findAdminCategoryById(id: string) {
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-    const condition = isUuid ? or(eq(categories.id, id), eq(categories.slug, id)) : eq(categories.slug, id);
-
-    const categoryRecord = await db.select().from(categories).where(condition).then((r) => r[0] || null);
-
-    if (!categoryRecord) return null;
-
-    const attachedProducts = await db
-      .select({
-        id: products.id,
-        name: products.name,
-        slug: products.slug,
-        price: products.price,
-        isActive: products.isActive,
-        featured: products.featured,
-        newArrival: products.newArrival,
-        createdAt: products.createdAt,
-      })
-      .from(products)
-      .where(eq(products.categoryId, categoryRecord.id))
-      .orderBy(desc(products.createdAt));
-
     return {
-      category: categoryRecord,
-      productCount: attachedProducts.length,
-      products: attachedProducts,
+      items,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit) || 0,
+      },
     };
   }
 
-  /**
-   * Admin: Create category record
-   */
-  static async createAdminCategory(payload: any) {
-    const [created] = await db
-      .insert(categories)
-      .values({
-        name: payload.name,
-        slug: payload.slug.toLowerCase().trim(),
-        description: payload.description || null,
-        image: payload.image || null,
-        isActive: payload.isActive ?? true,
-        sortOrder: payload.sortOrder || 0,
-        metaTitle: payload.metaTitle || null,
-        metaDescription: payload.metaDescription || null,
-        keywords: payload.keywords || null,
-        canonicalUrl: payload.canonicalUrl || null,
-        ogImage: payload.ogImage || null,
-        noIndex: Boolean(payload.noIndex),
-      })
-      .returning();
-
-    return created;
-  }
-
-  /**
-   * Admin: Update category record
-   */
-  static async updateAdminCategory(id: string, payload: any) {
-    const [updated] = await db
-      .update(categories)
-      .set({
-        name: payload.name,
-        slug: payload.slug.toLowerCase().trim(),
-        description: payload.description || null,
-        image: payload.image || null,
-        isActive: payload.isActive,
-        sortOrder: payload.sortOrder,
-        metaTitle: payload.metaTitle || null,
-        metaDescription: payload.metaDescription || null,
-        keywords: payload.keywords || null,
-        canonicalUrl: payload.canonicalUrl || null,
-        ogImage: payload.ogImage || null,
-        noIndex: Boolean(payload.noIndex),
-        updatedAt: new Date(),
-      })
-      .where(eq(categories.id, id))
-      .returning();
-
-    return updated;
-  }
-
-  /**
-   * Admin: Toggle category status
-   */
-  static async toggleCategoryStatus(id: string) {
-    const cat = await db
+  static async findAdminCategoryById(id: string) {
+    const record = await db
       .select()
       .from(categories)
       .where(eq(categories.id, id))
-      .then((r) => r[0]);
+      .then((rows) => rows[0] || null);
 
-    if (!cat) throw new Error("Category not found");
+    if (!record) return null;
 
-    const [updated] = await db
-      .update(categories)
-      .set({ isActive: !cat.isActive, updatedAt: new Date() })
-      .where(eq(categories.id, id))
-      .returning();
-
-    return updated;
-  }
-
-  /**
-   * Admin: Safe Delete Category with product constraint verification
-   */
-  static async deleteAdminCategory(id: string) {
-    const [{ total }] = await db
+    const countRes = await db
       .select({ total: count() })
       .from(products)
       .where(eq(products.categoryId, id));
 
-    if (Number(total) > 0) {
-      throw new Error(
-        `Cannot delete category. There are ${total} product(s) assigned to this category. Please reassign or delete the products first.`
-      );
-    }
+    return {
+      ...record,
+      productCount: Number(countRes[0]?.total || 0),
+    };
+  }
 
-    const [deleted] = await db.delete(categories).where(eq(categories.id, id)).returning();
+  static async createAdminCategory(data: any) {
+    const [created] = await db.insert(categories).values(data).returning();
+    return created;
+  }
+
+  static async updateAdminCategory(id: string, data: any) {
+    const [updated] = await db
+      .update(categories)
+      .set({
+        ...data,
+        updatedAt: new Date(),
+      })
+      .where(eq(categories.id, id))
+      .returning();
+    return updated;
+  }
+
+  static async toggleCategoryStatus(id: string) {
+    const current = await this.findAdminCategoryById(id);
+    if (!current) throw new Error("Category not found");
+
+    const [updated] = await db
+      .update(categories)
+      .set({
+        isActive: !current.isActive,
+        updatedAt: new Date(),
+      })
+      .where(eq(categories.id, id))
+      .returning();
+    return updated;
+  }
+
+  static async deleteAdminCategory(id: string) {
+    const [deleted] = await db
+      .delete(categories)
+      .where(eq(categories.id, id))
+      .returning();
     return deleted;
   }
 
-  /**
-   * Admin: Bulk action on categories (activate, deactivate, safe delete)
-   */
   static async bulkAdminCategoryAction(ids: string[], action: "activate" | "deactivate" | "delete") {
-    if (!ids || ids.length === 0) return;
+    if (ids.length === 0) return { affected: 0 };
 
     if (action === "activate") {
-      await db
+      const updated = await db
         .update(categories)
         .set({ isActive: true, updatedAt: new Date() })
-        .where(inArray(categories.id, ids));
+        .where(inArray(categories.id, ids))
+        .returning();
+      return { affected: updated.length };
     } else if (action === "deactivate") {
-      await db
+      const updated = await db
         .update(categories)
         .set({ isActive: false, updatedAt: new Date() })
-        .where(inArray(categories.id, ids));
+        .where(inArray(categories.id, ids))
+        .returning();
+      return { affected: updated.length };
     } else if (action === "delete") {
-      // Safe check for each ID
-      for (const id of ids) {
-        const [{ total }] = await db
-          .select({ total: count() })
-          .from(products)
-          .where(eq(products.categoryId, id));
-
-        if (Number(total) > 0) {
-          throw new Error(
-            `Cannot delete one or more selected categories. Some categories still contain products.`
-          );
-        }
-      }
-      await db.delete(categories).where(inArray(categories.id, ids));
+      const deleted = await db
+        .delete(categories)
+        .where(inArray(categories.id, ids))
+        .returning();
+      return { affected: deleted.length };
     }
+
+    return { affected: 0 };
   }
 }
