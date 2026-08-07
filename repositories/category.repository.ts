@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { unstable_cache, revalidateTag } from "next/cache";
 import { db } from "@/db/client";
-import { categories, products } from "@/db/schema";
+import { categories, products, productImages, productSizes } from "@/db/schema";
 import { eq, and, asc, desc, count, or, ilike, inArray } from "drizzle-orm";
 
 const cachedFindAllCategories = cache(
@@ -216,14 +216,63 @@ export class CategoryRepository {
         .select()
         .from(products)
         .where(eq(products.categoryId, id))
-        .orderBy(desc(products.createdAt))
-        .limit(50),
+        .orderBy(desc(products.createdAt)),
     ]);
+
+    const productIds = assignedProducts.map((p) => p.id);
+    let imagesMap = new Map<string, any[]>();
+    let sizesMap = new Map<string, any[]>();
+
+    if (productIds.length > 0) {
+      const [allImages, allSizes] = await Promise.all([
+        db
+          .select()
+          .from(productImages)
+          .where(inArray(productImages.productId, productIds))
+          .orderBy(asc(productImages.sortOrder)),
+        db
+          .select()
+          .from(productSizes)
+          .where(inArray(productSizes.productId, productIds))
+          .orderBy(asc(productSizes.sortOrder)),
+      ]);
+
+      for (const img of allImages) {
+        if (!imagesMap.has(img.productId)) {
+          imagesMap.set(img.productId, []);
+        }
+        imagesMap.get(img.productId)!.push(img);
+      }
+
+      for (const sz of allSizes) {
+        if (!sizesMap.has(sz.productId)) {
+          sizesMap.set(sz.productId, []);
+        }
+        sizesMap.get(sz.productId)!.push(sz);
+      }
+    }
+
+    const productsEnriched = assignedProducts.map((p) => {
+      const imgs = imagesMap.get(p.id) || [];
+      const szs = sizesMap.get(p.id) || [];
+      const primaryImg = imgs.find((i) => i.isPrimary) || imgs[0];
+      const totalStock = szs.reduce((sum: number, s: any) => sum + (Number(s.stock) || 0), 0);
+      const isInStock = totalStock > 0;
+
+      return {
+        ...p,
+        images: imgs,
+        image: primaryImg?.image || null,
+        sizes: szs,
+        totalStock,
+        isInStock,
+      };
+    });
 
     return {
       ...record,
       productCount: Number(countRes[0]?.total || 0),
-      products: assignedProducts,
+      products: productsEnriched,
     };
   }
 

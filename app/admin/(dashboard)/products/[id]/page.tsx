@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import {
   ArrowLeft,
   Edit,
@@ -17,7 +16,7 @@ import {
   Package,
   Layers,
 } from "lucide-react";
-import { AdminCard, AdminButton, AdminBadge, ConfirmDialog } from "@/components/admin";
+import { AdminCard, AdminButton, AdminBadge, ConfirmDialog, AdminMediaGallery } from "@/components/admin";
 import { toast } from "react-hot-toast";
 
 export default function ProductDetailPage() {
@@ -27,7 +26,6 @@ export default function ProductDetailPage() {
 
   const [data, setData] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeImage, setActiveImage] = useState<string>("/placeholder.svg");
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
@@ -40,9 +38,6 @@ export default function ProductDetailPage() {
 
         if (json.success && json.data) {
           setData(json.data);
-          if (json.data.images && json.data.images.length > 0) {
-            setActiveImage(json.data.images[0].image);
-          }
         } else {
           toast.error("Product not found");
         }
@@ -150,25 +145,7 @@ export default function ProductDetailPage() {
       {/* Main Product Layout */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Images Gallery */}
-        <div className="space-y-3">
-          <div className="relative aspect-4/5 bg-stone-100 rounded-2xl overflow-hidden border border-stone-200">
-            <Image src={activeImage} alt={product.name} fill className="object-cover" />
-          </div>
-
-          <div className="flex items-center gap-2 overflow-x-auto pb-1">
-            {images.map((img: any, idx: number) => (
-              <button
-                key={img.id || idx}
-                onClick={() => setActiveImage(img.image)}
-                className={`relative w-14 h-14 rounded-lg overflow-hidden border-2 flex-shrink-0 ${
-                  activeImage === img.image ? "border-[#B67B5C]" : "border-stone-200"
-                }`}
-              >
-                <Image src={img.image} alt={`Thumb ${idx}`} fill className="object-cover" />
-              </button>
-            ))}
-          </div>
-        </div>
+        <AdminMediaGallery images={images} alt={product.name} />
 
         {/* Product Meta & Details */}
         <div className="md:col-span-2 space-y-6">

@@ -14,3 +14,5 @@ export * from "./Skeleton";
 export * from "./ImageUploadPreview";
 export * from "./ProductForm";
 export * from "./CategoryForm";
+export * from "./admin-media-gallery";
+

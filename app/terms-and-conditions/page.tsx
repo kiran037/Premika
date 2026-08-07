@@ -1,24 +1,36 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
+import React from "react";
+import Container from "@/components/ui/container";
+import InfoPageHeader from "@/components/ui/info-page-header";
+import InfoCard from "@/components/ui/info-card";
+import InfoPageFooter from "@/components/ui/info-page-footer";
 import {
-  AlertTriangle,
-  Clock,
-  Package,
   Shield,
-  Truck,
   CreditCard,
-  RotateCcw,
   Ruler,
+  RotateCcw,
+  Package,
+  AlertTriangle,
+  CheckCircle2,
+  FileText,
+  Lock,
+  Globe,
+  Cookie,
+  Mail,
+  Truck,
+  Clock,
+  MapPin,
+  Video,
+  Ban,
+  ListOrdered,
 } from "lucide-react";
 
 export function generateMetadata() {
   return {
-    title: "Terms and Conditions - Premika Store",
+    title: "Terms and Conditions & Store Policies - Premika Store",
     description:
-      "Read Premika Store&apos;s terms and conditions including our payment policy, return policy, delivery information, and size guidelines. No COD, prepaid only. 8-9 days delivery.",
+      "Read Premika Store's terms and conditions, privacy policy, shipping terms, refund policy, and cancellation policy. No COD, prepaid only. 8-9 days delivery.",
     keywords:
-      "premika store terms conditions, payment policy, return policy, delivery information, size guidelines, no cod, prepaid only, women clothing terms, fashion store policy",
+      "premika store terms conditions, privacy policy, shipping policy, refund policy, cancellation policy, payment policy, return policy, delivery information, size guidelines, no cod, prepaid only",
     authors: [{ name: "Premika Store" }],
     creator: "Premika Store",
     publisher: "Premika Store",
@@ -38,9 +50,9 @@ export function generateMetadata() {
       locale: "en_IN",
       url: "https://premika.shop/terms-and-conditions",
       siteName: "Premika Store",
-      title: "Terms and Conditions - Premika Store",
+      title: "Terms and Conditions & Store Policies - Premika Store",
       description:
-        "Read Premika Store&apos;s terms and conditions including our payment policy, return policy, delivery information, and size guidelines. No COD, prepaid only. 8-9 days delivery.",
+        "Read Premika Store's complete store policies including payment terms, privacy, shipping, returns, and cancellation policy.",
       images: [
         {
           url: "https://premika.shop/logo.png",
@@ -54,9 +66,9 @@ export function generateMetadata() {
       card: "summary_large_image",
       site: "@premika_store",
       creator: "@premika_store",
-      title: "Terms and Conditions - Premika Store",
+      title: "Terms and Conditions & Store Policies - Premika Store",
       description:
-        "Read Premika Store&apos;s terms and conditions including our payment policy, return policy, delivery information, and size guidelines. No COD, prepaid only. 8-9 days delivery.",
+        "Read Premika Store's complete store policies including payment terms, privacy, shipping, returns, and cancellation policy.",
       images: ["https://premika.shop/logo.png"],
     },
     alternates: {
@@ -66,318 +78,261 @@ export function generateMetadata() {
   };
 }
 
-export default function Component() {
+export default function TermsAndConditionsPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-tertiary/10">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-primary via-tertiary to-primary text-primary-foreground py-16 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 mb-4">
-            <Shield className="h-14 w-12 " />
-            <h1 className="text-4xl md:text-6xl font-bold mb-1 tracking-tight text-background">
-              Premika Store&apos;s
-            </h1>
-          </div>
-          <p className="text-xl md:text-2xl opacity-90 max-w-2xl mx-auto leading-relaxed text-background">
-            Terms & Conditions
-          </p>
-          <div className="mt-8 h-1 w-24 bg-primary-foreground/30 mx-auto rounded-full"></div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-background">
+      {/* 1. Header Banner */}
+      <InfoPageHeader
+        badge="Store Guidelines & Legal"
+        icon={Shield}
+        title="Terms & Store Policies"
+        subtitle="Complete guidelines governing your purchases, privacy, shipping, refunds, and order cancellations at Premika."
+      />
 
-      {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 py-12 space-y-8">
-        {/* Introduction */}
-        <Card className="border-l-4 border-l-primary  border-primary shadow-lg bg-[#E0BCA2]">
-          <CardContent className="pt-6">
-            <p className="text-lg leading-relaxed text-secondary">
-              At <span className="font-semibold text-primary">Premika</span>, we
-              are committed to providing a transparent and satisfying shopping
-              experience. Please review our store policies carefully before
-              placing an order. By making a purchase, you agree to these terms
-              and conditions.
+      {/* 2. Main Content Container */}
+      <Container>
+        <div className="px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-6 sm:space-y-8 max-w-5xl mx-auto">
+          {/* Table of Contents Section */}
+          <InfoCard title="Contents" icon={ListOrdered} borderAccent className="bg-popover/20">
+            <p className="text-xs sm:text-sm text-muted-foreground mb-3">
+              Click any policy topic below to navigate directly to its detailed terms:
             </p>
-          </CardContent>
-        </Card>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 text-xs sm:text-sm">
+              <a
+                href="#terms-and-conditions"
+                className="flex items-center gap-2 p-2.5 rounded-lg bg-card border border-primary/20 hover:border-primary text-primary font-bold transition-all shadow-2xs hover:shadow-xs"
+              >
+                <Shield size={16} />
+                <span>1. Terms & Conditions</span>
+              </a>
 
-        {/* Policy Cards */}
-        <div className="space-y-6">
-          {/* Row 1: Payment Policy and Size Information in 2 columns */}
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Payment Policy */}
-            <Card className="group hover:shadow-xl transition-all duration-300 border-primary bg-[#E0BCA2]">
-              <CardHeader className="bg-gradient-to-r from-tertiary/10 to-primary/5">
-                <CardTitle className="flex items-center gap-3 text-2xl text-secondary">
-                  <div className=" bg-primary/10 rounded-lg">
-                    <CreditCard className="h-6 w-6 text-primary" />
-                  </div>
-                  Payment Policy
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <AlertTriangle className="h-5 w-5 mt-1 flex-shrink-0 text-foreground" />
-                    <div>
-                      <h4 className="font-semibold text-lg mb-2 text-secondary">
-                        No Cash on Delivery (COD)
-                      </h4>
-                      <p className="text-secondary leading-relaxed">
-                        We do not offer Cash on Delivery services. All orders
-                        must be prepaid through the available payment options at
-                        checkout including credit/debit cards, UPI, net banking,
-                        and digital wallets.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+              <a
+                href="#privacy-policy"
+                className="flex items-center gap-2 p-2.5 rounded-lg bg-card border border-primary/20 hover:border-primary text-primary font-bold transition-all shadow-2xs hover:shadow-xs"
+              >
+                <Lock size={16} />
+                <span>2. Privacy Policy</span>
+              </a>
 
-            {/* Size Information */}
-            <Card className="group hover:shadow-xl transition-all duration-300 border-primary bg-[#E0BCA2]">
-              <CardHeader className="bg-gradient-to-r from-tertiary/10 to-primary/5">
-                <CardTitle className="flex items-center gap-3 text-2xl text-secondary">
-                  <div className=" bg-primary/10 rounded-lg">
-                    <Ruler className="h-6 w-6 text-primary" />
-                  </div>
-                  Size Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="bg-tertiary/10 border border-[#B67B5C] rounded-lg p-4">
-                    <h4 className="font-semibold text-lg mb-3 text-secondary">
-                      Important Size Guidelines
-                    </h4>
-                    <ul className="space-y-2 ml-4">
-                      <li className="flex items-start gap-2">
-                        <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                        <span className="text-secondary">
-                          Please refer to our size chart before placing your
-                          order
-                        </span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                        <span className="text-secondary">
-                          All sizes mentioned are in inches
-                        </span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                        <span className="text-secondary">
-                          Accurate measurements help ensure a perfect fit and
-                          avoid sizing issues
-                        </span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+              <a
+                href="#shipping-policy"
+                className="flex items-center gap-2 p-2.5 rounded-lg bg-card border border-primary/20 hover:border-primary text-primary font-bold transition-all shadow-2xs hover:shadow-xs"
+              >
+                <Truck size={16} />
+                <span>3. Shipping Policy</span>
+              </a>
 
-          {/* Row 2: Return & Exchange Policy with 2 columns */}
-          <Card className="group hover:shadow-xl transition-all duration-300 border-primary bg-[#E0BCA2]">
-            <CardHeader className="bg-gradient-to-r from-tertiary/10 to-primary/5">
-              <CardTitle className="flex items-center gap-3 text-2xl text-secondary">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <RotateCcw className="h-6 w-6 text-primary" />
-                </div>
-                Return & Exchange Policy
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-4">
-                  <h4 className="font-semibold text-lg mb-2 text-foreground">
-                    General Policy
-                  </h4>
-                  <p className="text-secondary leading-relaxed">
-                    We do not accept returns, refunds, or exchanges unless the
-                    error is from our side. Kindly double-check your order
-                    details, size, and color before confirming your purchase.
+              <a
+                href="#refund-policy"
+                className="flex items-center gap-2 p-2.5 rounded-lg bg-card border border-primary/20 hover:border-primary text-primary font-bold transition-all shadow-2xs hover:shadow-xs"
+              >
+                <RotateCcw size={16} />
+                <span>4. Refund Policy</span>
+              </a>
+
+              <a
+                href="#cancellation-policy"
+                className="flex items-center gap-2 p-2.5 rounded-lg bg-card border border-primary/20 hover:border-primary text-primary font-bold transition-all shadow-2xs hover:shadow-xs"
+              >
+                <Ban size={16} />
+                <span>5. Cancellation Policy</span>
+              </a>
+            </div>
+          </InfoCard>
+
+          {/* SECTION 1: TERMS & CONDITIONS */}
+          <InfoCard id="terms-and-conditions" title="1. Terms & Conditions" icon={Shield}>
+            <div className="space-y-6">
+              <p className="text-xs sm:text-sm text-foreground leading-relaxed">
+                At <span className="font-semibold text-primary">Premika</span>, we are committed to providing a transparent, fair, and satisfying shopping experience. Please review our store policies carefully before placing an order. By making a purchase, you agree to these terms and conditions.
+              </p>
+
+              {/* Payment & Size Information Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Payment Policy */}
+                <div className="p-4 rounded-lg bg-popover/30 border border-primary/20 space-y-2">
+                  <div className="flex items-center gap-2 text-primary font-bold text-base">
+                    <CreditCard size={18} />
+                    <h4>Payment Policy (No COD)</h4>
+                  </div>
+                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                    We do not offer Cash on Delivery services. All orders must be prepaid through available online payment options at checkout including Credit/Debit cards, UPI, Net Banking, and digital wallets.
                   </p>
                 </div>
 
-                <div className="bg-primary/5 border border-secondary rounded-lg p-4">
-                  <h4 className="font-semibold text-lg mb-3 text-primary">
+                {/* Size Guidelines */}
+                <div className="p-4 rounded-lg bg-popover/30 border border-primary/20 space-y-2">
+                  <div className="flex items-center gap-2 text-primary font-bold text-base">
+                    <Ruler size={18} />
+                    <h4>Size Guidelines</h4>
+                  </div>
+                  <ul className="space-y-1.5 text-xs sm:text-sm text-foreground">
+                    <li>• Please refer to our size chart before placing your order.</li>
+                    <li>• All sizes mentioned on the store are in inches.</li>
+                    <li>• Accurate measurements help ensure a perfect fit and prevent sizing issues.</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Additional Terms Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+                <div className="p-4 rounded-lg bg-popover/20 border border-primary/10 space-y-1">
+                  <h5 className="font-bold text-xs sm:text-sm text-foreground">Order Confirmation</h5>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    All orders are subject to product availability and confirmation of the order price.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-lg bg-popover/20 border border-primary/10 space-y-1">
+                  <h5 className="font-bold text-xs sm:text-sm text-foreground">Product Images</h5>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Colors may vary slightly due to studio lighting and screen display settings.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-lg bg-popover/20 border border-primary/10 space-y-1">
+                  <h5 className="font-bold text-xs sm:text-sm text-foreground">Customer Support</h5>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Contact our support team for any product queries before placing your order.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </InfoCard>
+
+          {/* SECTION 2: PRIVACY POLICY */}
+          <InfoCard id="privacy-policy" title="2. Privacy Policy" icon={Lock}>
+            <div className="space-y-6">
+              <p className="text-xs sm:text-sm text-foreground leading-relaxed">
+                We value your privacy and are committed to protecting your personal information. This Privacy Policy explains how we collect, use, and safeguard your data when you visit our website and make purchases.
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="p-4 rounded-lg bg-popover/30 border border-primary/20 space-y-2">
+                  <h4 className="font-bold text-sm sm:text-base text-foreground flex items-center gap-2">
+                    <Lock className="w-4 h-4 text-primary" />
+                    Personal & Auto Information We Collect
+                  </h4>
+                  <ul className="space-y-1.5 text-xs sm:text-sm text-foreground">
+                    <li>• Name, email address, phone number, and delivery address.</li>
+                    <li>• Payment information (processed securely through encrypted gateways).</li>
+                    <li>• Browser type, device details, IP address, and location data.</li>
+                    <li>• Cookies and website browsing analytics.</li>
+                  </ul>
+                </div>
+
+                <div className="p-4 rounded-lg bg-popover/30 border border-primary/20 space-y-2">
+                  <h4 className="font-bold text-sm sm:text-base text-foreground flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-primary" />
+                    Data Usage & Security
+                  </h4>
+                  <ul className="space-y-1.5 text-xs sm:text-sm text-foreground">
+                    <li>• <strong>Order Processing:</strong> To fulfill purchases and manage logistics.</li>
+                    <li>• <strong>Data Security:</strong> SSL encryption applied across all transactions.</li>
+                    <li>• <strong>No Data Selling:</strong> We do not sell or rent customer data to third parties.</li>
+                    <li>• <strong>Trusted Partners:</strong> Limited sharing only with shipping couriers.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </InfoCard>
+
+          {/* SECTION 3: SHIPPING POLICY */}
+          <InfoCard id="shipping-policy" title="3. Shipping Policy" icon={Truck}>
+            <div className="space-y-6">
+              <p className="text-xs sm:text-sm text-foreground leading-relaxed">
+                We ensure safe and timely delivery of your orders across India with reliable courier partners.
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="p-4 rounded-lg bg-popover/30 border border-primary/20 space-y-2">
+                  <h4 className="font-bold text-sm sm:text-base text-foreground flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-primary" />
+                    Coverage & Timelines
+                  </h4>
+                  <ul className="space-y-1.5 text-xs sm:text-sm text-foreground">
+                    <li>• <strong>Delivery Coverage:</strong> Serving 19,000+ PIN codes across India.</li>
+                    <li>• <strong>Standard Timeline:</strong> 8 to 9 business days across India.</li>
+                    <li>• <strong>Dispatch Note:</strong> Delivery time starts from the parcel dispatch date.</li>
+                  </ul>
+                </div>
+
+                <div className="p-4 rounded-lg bg-popover/30 border border-primary/20 space-y-2">
+                  <h4 className="font-bold text-sm sm:text-base text-foreground flex items-center gap-2">
+                    <Package className="w-4 h-4 text-primary" />
+                    Shipping Fees & Packaging
+                  </h4>
+                  <ul className="space-y-1.5 text-xs sm:text-sm text-foreground">
+                    <li>• <strong>Free Shipping:</strong> 100% free delivery on all orders nationwide.</li>
+                    <li>• <strong>Packaging:</strong> Tamper-proof outer wrap with protective inner lining.</li>
+                    <li>• <strong>Tracking:</strong> Real-time tracking link sent via SMS and Email upon dispatch.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </InfoCard>
+
+          {/* SECTION 4: REFUND POLICY */}
+          <InfoCard id="refund-policy" title="4. Refund Policy" icon={RotateCcw}>
+            <div className="space-y-6">
+              <p className="text-xs sm:text-sm text-foreground leading-relaxed">
+                Refunds are handled carefully and processed exclusively for store errors as outlined below.
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="p-4 rounded-lg bg-popover/30 border border-primary/20 space-y-2">
+                  <h4 className="font-bold text-sm sm:text-base text-foreground flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-primary" />
                     Returns Accepted Only For Store Errors
                   </h4>
-                  <div className="space-y-3">
-                    <p className="text-secondary">
-                      Returns will be accepted only if:
-                    </p>
-                    <ul className="space-y-2 ml-4">
-                      <li className="flex items-start gap-2">
-                        <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                        <span className="text-secondary">
-                          We sent the wrong item, wrong size, or a defective
-                          product
-                        </span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                        <span className="text-secondary">
-                          A full unboxing video is provided as proof — the video
-                          must be uncut and continuous from the moment the
-                          package is opened
-                        </span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                        <span className="text-secondary">
-                          The return process is initiated within 2–3 days of
-                          receiving the order
-                        </span>
-                      </li>
-                    </ul>
-                    <p className="text-sm text-secondary mt-3">
-                      Returns requested after this window will not be accepted.
-                      Refunds (if applicable) will be processed after we receive
-                      and inspect the returned item.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Row 3: Additional Terms */}
-          <Card className="group hover:shadow-xl transition-all duration-300 border-primary  bg-[#E0BCA2]">
-            <CardHeader className="bg-gradient-to-r from-tertiary/10 to-primary/5">
-              <CardTitle className="flex items-center gap-3 text-2xl text-secondary">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Package className="h-6 w-6 text-primary" />
-                </div>
-                Additional Terms
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div className="p-4 bg-muted/30 rounded-lg">
-                    <h4 className="font-semibold mb-2 text-secondary">
-                      Order Confirmation
-                    </h4>
-                    <p className="text-sm text-secondary">
-                      All orders are subject to availability and confirmation of
-                      the order price.
-                    </p>
-                  </div>
-                  <div className="p-4 bg-muted/30 rounded-lg">
-                    <h4 className="font-semibold mb-2 text-secondary">
-                      Product Images
-                    </h4>
-                    <p className="text-sm text-secondary">
-                      Colors may vary slightly due to screen settings and
-                      lighting conditions.
-                    </p>
-                  </div>
-                  <div className="p-4 bg-muted/30 rounded-lg">
-                    <h4 className="font-semibold mb-2 text-secondary">
-                      Customer Support
-                    </h4>
-                    <p className="text-sm text-secondary">
-                      Contact our support team for any queries before placing
-                      your order.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Cancellation and Refunds */}
-          <Card className="group hover:shadow-xl transition-all duration-300 border-primary bg-[#E0BCA2]">
-            <CardHeader className="bg-gradient-to-r from-tertiary/10 to-primary/5">
-              <CardTitle className="flex items-center gap-3 text-2xl text-secondary">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <RotateCcw className="h-6 w-6 text-primary" />
-                </div>
-                Cancellation and Refunds
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-4">
-                  <h4 className="font-semibold text-lg mb-3 text-foreground">
-                    Order Cancellation
-                  </h4>
-                  <ul className="space-y-2 ml-4">
-                    <li className="flex items-start gap-2">
-                      <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                      <span className="text-secondary">
-                        Orders cannot be cancelled once payment is confirmed
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                      <span className="text-secondary">
-                        Please double-check your order before making payment
-                      </span>
-                    </li>
+                  <ul className="space-y-1.5 text-xs sm:text-sm text-foreground">
+                    <li>• Accepted only if wrong item, wrong size, or defective item is sent.</li>
+                    <li>• Full unboxing video proof is mandatory (uncut and continuous from package opening).</li>
+                    <li>• Return process must be initiated within 2–3 days of order delivery.</li>
                   </ul>
                 </div>
-                <div className="bg-primary/5 border border-secondary rounded-lg p-4">
-                  <h4 className="font-semibold text-lg mb-3 text-primary">
-                    Refund Policy
+
+                <div className="p-4 rounded-lg bg-popover/30 border border-primary/20 space-y-2">
+                  <h4 className="font-bold text-sm sm:text-base text-foreground flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-primary" />
+                    Refund Processing
                   </h4>
-                  <ul className="space-y-2 ml-4">
-                    <li className="flex items-start gap-2">
-                      <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                      <span className="text-secondary">
-                        Refunds are processed only for store errors
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                      <span className="text-secondary">
-                        Refund processing time: 5-7 business days after item
-                        return
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                      <span className="text-secondary">
-                        Refunds will be credited to the original payment method
-                      </span>
-                    </li>
+                  <ul className="space-y-1.5 text-xs sm:text-sm text-foreground">
+                    <li>• <strong>Processing Time:</strong> 5 to 7 business days after item receipt & inspection.</li>
+                    <li>• <strong>Credit Method:</strong> Refunded directly to the original payment source.</li>
+                    <li>• <strong>Notice:</strong> Returns requested after the 3-day window cannot be accepted.</li>
                   </ul>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Footer */}
-        <Card className="bg-gradient-to-r from-primary/5 via-tertiary/5 to-primary/5 border-primary ">
-          <CardContent className="pt-6 text-center text-secondary">
-            <p className="text-lg font-medium mb-2">
-              We appreciate your understanding and cooperation.
-            </p>
-            <p className="text-foreground/70 mb-4">
-              For any queries, feel free to contact our support team before
-              placing your order.
-            </p>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-2 text-primary font-semibold text-lg sm:text-xl">
-              <span>Thank you for shopping with</span>
-              <span className="bg-primary text-primary-foreground px-3 py-1 rounded-lg inline-block">
-                Premika!
-              </span>
             </div>
-            <p className="text-sm text-foreground/50 mt-4">
-              Last updated:{" "}
-              {new Date().toLocaleDateString("en-IN", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+          </InfoCard>
+
+          {/* SECTION 5: CANCELLATION POLICY */}
+          <InfoCard id="cancellation-policy" title="5. Cancellation Policy" icon={Ban}>
+            <div className="space-y-4">
+              <div className="p-4 rounded-lg bg-popover/30 border border-primary/20 space-y-2">
+                <h4 className="font-bold text-sm sm:text-base text-foreground flex items-center gap-2">
+                  <Ban className="w-4 h-4 text-primary" />
+                  Order Cancellation Guidelines
+                </h4>
+                <ul className="space-y-1.5 text-xs sm:text-sm text-foreground">
+                  <li>• Orders cannot be cancelled once payment is confirmed.</li>
+                  <li>• Please double-check your order details, size, and address before making payment.</li>
+                  <li>• For urgent address corrections before dispatch, email <strong className="text-primary">premika.shop@gmail.com</strong> immediately.</li>
+                </ul>
+              </div>
+            </div>
+          </InfoCard>
+
+          {/* 3. Reusable Ending Footer Card */}
+          <InfoPageFooter
+            storeName="Premika"
+            message="We appreciate your understanding and cooperation. For any queries, feel free to contact our customer care team."
+            ctaText="Contact Support"
+            ctaHref="/contact-us"
+          />
+        </div>
+      </Container>
     </div>
   );
 }

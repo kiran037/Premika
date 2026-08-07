@@ -55,9 +55,9 @@ export function Footer({ storeInfo }: FooterProps) {
             <div className="flex-1">
               <button
                 onClick={() => setIsQuickLinksOpen(!isQuickLinksOpen)}
-                className="flex items-center justify-evenly w-full font-bold mb-2 text-left"
+                className="flex items-center justify-between w-full font-bold mb-2 text-left pr-2"
               >
-                Quick Links
+                <span>Quick Links</span>
                 <ChevronDown
                   className={`w-4 h-4 transition-transform ${
                     isQuickLinksOpen ? "rotate-180" : ""
@@ -65,15 +65,18 @@ export function Footer({ storeInfo }: FooterProps) {
                 />
               </button>
               {isQuickLinksOpen && (
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-[#E0BCA2]">
-                  <Link href="/" className="hover:text-white transition-colors">
+                <div className="flex flex-col space-y-2 text-sm text-[#E0BCA2]">
+                  <Link href="/about-us" className="hover:text-white transition-colors">
+                    About Us
+                  </Link>
+                  <Link href="/shop" className="hover:text-white transition-colors">
                     Products
                   </Link>
-                  <Link
-                    href="/cart"
-                    className="hover:text-white transition-colors"
-                  >
+                  <Link href="/cart" className="hover:text-white transition-colors">
                     Cart
+                  </Link>
+                  <Link href="/contact-us" className="hover:text-white transition-colors">
+                    Contact Us
                   </Link>
                   <Link
                     href="/terms-and-conditions"
@@ -81,35 +84,17 @@ export function Footer({ storeInfo }: FooterProps) {
                   >
                     Terms & Conditions
                   </Link>
-                  <Link
-                    href="/privacy-policy"
-                    className="hover:text-white transition-colors"
-                  >
-                    Privacy Policy
-                  </Link>
-                  <Link
-                    href="/shipping-policy"
-                    className="hover:text-white transition-colors col-span-1"
-                  >
-                    Shipping Policy
-                  </Link>
-                  <Link
-                    href="/terms-and-conditions"
-                    className="hover:text-white transition-colors col-span-1"
-                  >
-                    Returns and Exchange
-                  </Link>
                 </div>
               )}
             </div>
 
             {/* Contact Us - Right Aligned */}
-            <div className="flex-1 text-right">
+            <div className="flex-1 text-right pl-2">
               <button
                 onClick={() => setIsContactUsOpen(!isContactUsOpen)}
-                className="flex items-center justify-evenly w-full font-bold mb-2 text-right"
+                className="flex items-center justify-between w-full font-bold mb-2 text-right"
               >
-                Contact Us
+                <span className="w-full text-right">Customer Care</span>
                 <ChevronDown
                   className={`w-4 h-4 transition-transform ${
                     isContactUsOpen ? "rotate-180" : ""
@@ -184,7 +169,10 @@ export function Footer({ storeInfo }: FooterProps) {
             <div>
               <h4 className="font-bold mb-4">Quick Links</h4>
               <div className="space-y-2 text-sm text-[#E0BCA2] flex flex-col">
-                <Link href="/" className="hover:text-white transition-colors">
+                <Link href="/about-us" className="hover:text-white transition-colors">
+                  About Us
+                </Link>
+                <Link href="/shop" className="hover:text-white transition-colors">
                   Products
                 </Link>
                 <Link
@@ -193,30 +181,17 @@ export function Footer({ storeInfo }: FooterProps) {
                 >
                   Cart
                 </Link>
-
+                <Link
+                  href="/contact-us"
+                  className="hover:text-white transition-colors"
+                >
+                  Contact Us
+                </Link>
                 <Link
                   href="/terms-and-conditions"
                   className="hover:text-white transition-colors"
                 >
                   Terms & Conditions
-                </Link>
-                <Link
-                  href="/privacy-policy"
-                  className="hover:text-white transition-colors"
-                >
-                  Privacy Policy
-                </Link>
-                <Link
-                  href="/shipping-policy"
-                  className="hover:text-white transition-colors"
-                >
-                  Shipping Policy
-                </Link>
-                <Link
-                  href="/terms-and-conditions"
-                  className="hover:text-white transition-colors"
-                >
-                  Returns and Exchange
                 </Link>
               </div>
             </div>
