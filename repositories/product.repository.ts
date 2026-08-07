@@ -106,33 +106,41 @@ export class ProductRepository {
     const limit = filters.limit || 20;
     const offset = (page - 1) * limit;
 
-    // Total count query
-    const totalResult = await db
-      .select({ totalCount: count() })
-      .from(products)
-      .where(finalWhere);
+    // Parallelize Total count query and product records query
+    const [totalResult, productRecords] = await Promise.all([
+      db
+        .select({ totalCount: count() })
+        .from(products)
+        .where(finalWhere),
+      db
+        .select()
+        .from(products)
+        .where(finalWhere)
+        .orderBy(orderBy)
+        .limit(limit)
+        .offset(offset),
+    ]);
 
     const total = Number(totalResult[0]?.totalCount || 0);
 
-    if (total === 0) {
+    if (total === 0 || productRecords.length === 0) {
       return { items: [], total: 0 };
     }
 
-    // Fetch product records
-    const productRecords = await db
-      .select()
-      .from(products)
-      .where(finalWhere)
-      .orderBy(orderBy)
-      .limit(limit)
-      .offset(offset);
-
     const productIds = productRecords.map((p) => p.id);
+    const categoryIdsToFetch = Array.from(
+      new Set(productRecords.map((p) => p.categoryId).filter(Boolean))
+    );
 
     // Batch fetch relations
     const [allCategories, allImages, allSizes, allHeights, allReviews, allFamilyLinks] =
       await Promise.all([
-        db.select().from(categories),
+        categoryIdsToFetch.length > 0
+          ? db
+              .select()
+              .from(categories)
+              .where(inArray(categories.id, categoryIdsToFetch))
+          : Promise.resolve([]),
         productIds.length > 0
           ? db
               .select()
@@ -207,13 +215,17 @@ export class ProductRepository {
    * Find single product by slug or id
    */
   static async findProductBySlug(slugOrId: string): Promise<ProductWithRelations | null> {
+    const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(slugOrId);
+
     const productRecord = await db
       .select()
       .from(products)
       .where(
         and(
           eq(products.isActive, true),
-          or(eq(products.slug, slugOrId), eq(products.id, slugOrId))
+          isUuid
+            ? or(eq(products.slug, slugOrId), eq(products.id, slugOrId))
+            : eq(products.slug, slugOrId)
         )
       )
       .then((rows) => rows[0] || null);
@@ -222,16 +234,74 @@ export class ProductRepository {
       return null;
     }
 
-    const { items } = await this.findProducts(getProductsQuerySchema.parse({ page: 1, limit: 1 }));
-    const fullProduct = items.find((i) => i.product.id === productRecord.id);
+    const productId = productRecord.id;
 
-    return fullProduct || {
+    const [
+      categoryRows,
+      images,
+      sizes,
+      heights,
+      reviews,
+      familyLinks,
+    ] = await Promise.all([
+      productRecord.categoryId
+        ? db
+            .select()
+            .from(categories)
+            .where(eq(categories.id, productRecord.categoryId))
+        : Promise.resolve([]),
+      db
+        .select()
+        .from(productImages)
+        .where(eq(productImages.productId, productId))
+        .orderBy(asc(productImages.sortOrder)),
+      db
+        .select()
+        .from(productSizes)
+        .where(eq(productSizes.productId, productId))
+        .orderBy(asc(productSizes.sortOrder)),
+      db
+        .select()
+        .from(productHeights)
+        .where(eq(productHeights.productId, productId))
+        .orderBy(asc(productHeights.sortOrder)),
+      db
+        .select()
+        .from(productReviews)
+        .where(eq(productReviews.productId, productId)),
+      db
+        .select({
+          productId: familyProducts.productId,
+          role: familyProducts.role,
+          familyId: productFamilies.id,
+          familyName: productFamilies.name,
+          familySlug: productFamilies.slug,
+        })
+        .from(familyProducts)
+        .innerJoin(
+          productFamilies,
+          eq(familyProducts.familyId, productFamilies.id)
+        )
+        .where(eq(familyProducts.productId, productId)),
+    ]);
+
+    const familyLink = familyLinks[0];
+
+    return {
       product: productRecord,
-      category: null,
-      images: [],
-      sizes: [],
-      heights: [],
-      reviews: [],
+      category: categoryRows[0] || null,
+      images,
+      sizes,
+      heights,
+      reviews,
+      family: familyLink
+        ? {
+            id: familyLink.familyId,
+            name: familyLink.familyName,
+            slug: familyLink.familySlug,
+            role: familyLink.role,
+          }
+        : undefined,
     };
   }
 
@@ -303,14 +373,23 @@ export class ProductRepository {
         break;
     }
 
-    const totalResult = await db
-      .select({ totalCount: count() })
-      .from(products)
-      .where(whereClause);
+    const [totalResult, productRecords] = await Promise.all([
+      db
+        .select({ totalCount: count() })
+        .from(products)
+        .where(whereClause),
+      db
+        .select()
+        .from(products)
+        .where(whereClause)
+        .orderBy(orderBy)
+        .limit(limit)
+        .offset(offset),
+    ]);
 
     const total = Number(totalResult[0]?.totalCount || 0);
 
-    if (total === 0) {
+    if (total === 0 || productRecords.length === 0) {
       return {
         items: [],
         pagination: {
@@ -322,32 +401,32 @@ export class ProductRepository {
       };
     }
 
-    const productRecords = await db
-      .select()
-      .from(products)
-      .where(whereClause)
-      .orderBy(orderBy)
-      .limit(limit)
-      .offset(offset);
-
     const productIds = productRecords.map((p) => p.id);
+    const categoryIdsToFetch = Array.from(
+      new Set(productRecords.map((p) => p.categoryId).filter(Boolean))
+    );
 
     const [allCategories, allImages, allSizes] = await Promise.all([
-      db.select().from(categories),
+      categoryIdsToFetch.length > 0
+        ? db
+            .select()
+            .from(categories)
+            .where(inArray(categories.id, categoryIdsToFetch))
+        : Promise.resolve([]),
       productIds.length > 0
         ? db
             .select()
             .from(productImages)
             .where(inArray(productImages.productId, productIds))
             .orderBy(asc(productImages.sortOrder))
-        : [],
+        : Promise.resolve([]),
       productIds.length > 0
         ? db
             .select()
             .from(productSizes)
             .where(inArray(productSizes.productId, productIds))
             .orderBy(asc(productSizes.sortOrder))
-        : [],
+        : Promise.resolve([]),
     ]);
 
     const categoryMap = new Map(allCategories.map((c) => [c.id, c]));

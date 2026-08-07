@@ -28,6 +28,7 @@ export interface StoreInformation {
   instagramUrl: string | null;
   twitterUrl: string | null;
   socialLinks: SocialLinkItem[];
+  logo?: string | null;
 }
 
 const DEFAULT_STORE_INFO: StoreInformation = {
@@ -47,6 +48,7 @@ const DEFAULT_STORE_INFO: StoreInformation = {
   instagramUrl: "https://www.instagram.com/premika.store",
   twitterUrl: "https://twitter.com/",
   socialLinks: [],
+  logo: null,
 };
 
 export async function getStoreInformation(): Promise<StoreInformation> {
@@ -55,15 +57,18 @@ export async function getStoreInformation(): Promise<StoreInformation> {
   }
 
   try {
-    const [settings] = await db.select().from(storeSettings).limit(1);
-    const [contacts] = await db.select().from(storeContacts).limit(1);
-    const links = await db.select().from(socialLinks).orderBy(asc(socialLinks.sortOrder));
+    const [[settings], [contacts], links] = await Promise.all([
+      db.select().from(storeSettings).limit(1),
+      db.select().from(storeContacts).limit(1),
+      db.select().from(socialLinks).orderBy(asc(socialLinks.sortOrder)),
+    ]);
 
     const storeName = settings?.storeName || DEFAULT_STORE_INFO.storeName;
     const storeEmail = settings?.storeEmail || DEFAULT_STORE_INFO.storeEmail;
     const supportEmail = contacts?.supportEmail || settings?.storeEmail || DEFAULT_STORE_INFO.supportEmail;
     const supportPhone = contacts?.supportPhone || settings?.storePhone || DEFAULT_STORE_INFO.supportPhone;
     const businessHours = contacts?.businessHours || DEFAULT_STORE_INFO.businessHours;
+    const logo = settings?.logo || null;
 
     const address = contacts?.address || null;
     const city = contacts?.city || null;
@@ -107,6 +112,7 @@ export async function getStoreInformation(): Promise<StoreInformation> {
       instagramUrl,
       twitterUrl,
       socialLinks: links || [],
+      logo,
     };
   } catch (err) {
     console.error("Error in getStoreInformation:", err);

@@ -1,3 +1,5 @@
+import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import { Urbanist } from "next/font/google";
 import Script from "next/script";
 import { Metadata } from "next";
@@ -13,8 +15,16 @@ const font = Urbanist({ subsets: ["latin"] });
 // Google Analytics ID
 const GA_TRACKING_ID = process.env.NEXT_PUBLIC_GA_ID;
 
+const getLayoutSeo = cache(
+  unstable_cache(
+    async () => SeoService.getSeoSettings(),
+    ["layout-seo-settings"],
+    { revalidate: 300, tags: ["seo-settings"] }
+  )
+);
+
 export async function generateMetadata(): Promise<Metadata> {
-  const seo = await SeoService.getSeoSettings();
+  const seo = await getLayoutSeo();
 
   const siteName = seo?.siteName || "Premika Store";
   const titleTemplate = seo?.titleTemplate || "%s | Premika";

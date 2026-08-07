@@ -112,16 +112,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Fetch Maintenance Mode status from Node.js API endpoint
+  // Fetch Maintenance Mode status via HTTP route handler (Edge-compatible, no direct DB / Node net module in Edge)
   try {
-    const maintenanceApiUrl = new URL("/api/maintenance", request.url);
-    const res = await fetch(maintenanceApiUrl.toString(), {
-      headers: {
-        accept: "application/json",
-      },
-      next: { revalidate: 0 },
+    const maintUrl = new URL("/api/maintenance", request.url);
+    const res = await fetch(maintUrl, {
+      headers: { "x-middleware-request": "1" },
     });
-
     if (res.ok) {
       const data = await res.json();
       if (data?.maintenanceMode) {

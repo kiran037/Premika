@@ -1,5 +1,6 @@
 "use client";
 
+import { memo, useMemo } from "react";
 import ProductCard from "@/components/product-card";
 import { Product } from "@/types";
 import HomeProductSection from "./home-product-section";
@@ -9,13 +10,15 @@ interface FeaturedProductsProps {
   loading?: boolean;
 }
 
-export default function FeaturedProducts({
+function FeaturedProductsComponent({
   products,
   loading = false,
 }: FeaturedProductsProps) {
   // Filter featured products or fall back to first products
-  const featured = products.filter((p) => p.isFeatured || p.featured);
-  const displayProducts = (featured.length > 0 ? featured : products).slice(0, 8);
+  const displayProducts = useMemo(() => {
+    const featured = products.filter((p) => p.isFeatured || p.featured);
+    return (featured.length > 0 ? featured : products).slice(0, 8);
+  }, [products]);
 
   return (
     <HomeProductSection
@@ -43,3 +46,6 @@ export default function FeaturedProducts({
     </HomeProductSection>
   );
 }
+
+const FeaturedProducts = memo(FeaturedProductsComponent);
+export default FeaturedProducts;

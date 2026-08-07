@@ -1,4 +1,3 @@
-import { cache } from "react";
 import { StoreRepository } from "@/repositories/store.repository";
 import { SeoService } from "@/services/seo.service";
 import { GlobalSeoInput } from "@/lib/validations/seo";
@@ -9,8 +8,8 @@ import {
 } from "@/lib/validations/admin-store.schema";
 
 export class StoreService {
-  // Settings & Branding (deduplicated per request turn via React cache)
-  static getStoreSettings = cache(async () => {
+  // Settings & Branding
+  static async getStoreSettings() {
     const settings = await StoreRepository.getStoreSettings();
 
     if (!settings) {
@@ -28,7 +27,7 @@ export class StoreService {
       };
     }
     return settings;
-  });
+  }
 
   static async updateStoreSettings(input: StoreSettingsInput) {
     return StoreRepository.upsertStoreSettings(input);

@@ -1,5 +1,6 @@
 "use client";
 
+import { memo, useMemo } from "react";
 import ProductCard from "@/components/product-card";
 import { Product } from "@/types";
 import HomeProductSection from "./home-product-section";
@@ -9,9 +10,9 @@ interface NewArrivalsProps {
   loading?: boolean;
 }
 
-export default function NewArrivals({ products, loading = false }: NewArrivalsProps) {
+function NewArrivalsComponent({ products, loading = false }: NewArrivalsProps) {
   // Show first 4 to 8 products
-  const displayProducts = products.slice(0, 8);
+  const displayProducts = useMemo(() => products.slice(0, 8), [products]);
 
   return (
     <HomeProductSection
@@ -47,3 +48,6 @@ export default function NewArrivals({ products, loading = false }: NewArrivalsPr
     </HomeProductSection>
   );
 }
+
+const NewArrivals = memo(NewArrivalsComponent);
+export default NewArrivals;

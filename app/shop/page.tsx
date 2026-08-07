@@ -38,6 +38,7 @@ function ShopContent() {
 
   // Fetch Products & Categories
   useEffect(() => {
+    let isSubscribed = true;
     async function loadShopData() {
       try {
         setLoading(true);
@@ -48,6 +49,8 @@ function ShopContent() {
 
         const prodJson = await prodRes.json();
         const catJson = await catRes.json();
+
+        if (!isSubscribed) return;
 
         if (prodJson.success && Array.isArray(prodJson.data)) {
           setProducts(prodJson.data);
@@ -63,10 +66,16 @@ function ShopContent() {
       } catch (err) {
         console.error("Error loading shop data:", err);
       } finally {
-        setLoading(false);
+        if (isSubscribed) {
+          setLoading(false);
+        }
       }
     }
     loadShopData();
+
+    return () => {
+      isSubscribed = false;
+    };
   }, []);
 
   // Compute Active Filter Count

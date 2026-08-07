@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, memo } from "react";
 import { getDiscountedPrice } from "@/lib/pricing";
 import { Product } from "@/types";
 import HeartButton from "@/components/ui/heart-button";
@@ -11,8 +11,9 @@ interface ProductCardProps {
   product: Product;
 }
 
-export default function ProductCard({ product }: ProductCardProps) {
+function ProductCardComponent({ product }: ProductCardProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const pricing = getDiscountedPrice(product);
 
   return (
     <Link href={`/${product.id}`} className="block h-full">
@@ -28,8 +29,10 @@ export default function ProductCard({ product }: ProductCardProps) {
             src={product.images[currentImageIndex] || product.images[0] || "/placeholder.svg"}
             alt={product.name}
             fill
+            loading="lazy"
+            decoding="async"
             className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           />
 
           {/* Heart Button Overlay */}
@@ -45,14 +48,11 @@ export default function ProductCard({ product }: ProductCardProps) {
           )}
 
           {/* Sale Badge */}
-          {(() => {
-            const pricing = getDiscountedPrice(product);
-            return pricing.isOnSale && product.inStock ? (
-              <div className="absolute top-2.5 left-2.5 bg-primary text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow-xs uppercase tracking-wider">
-                SALE
-              </div>
-            ) : null;
-          })()}
+          {pricing.isOnSale && product.inStock && (
+            <div className="absolute top-2.5 left-2.5 bg-primary text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow-xs uppercase tracking-wider">
+              SALE
+            </div>
+          )}
 
           {/* Subtle Hover Overlay */}
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all duration-300" />
@@ -74,26 +74,23 @@ export default function ProductCard({ product }: ProductCardProps) {
 
             {/* Price */}
             <div className="flex items-center flex-wrap gap-1.5 pt-1.5 min-h-[2.5rem]">
-              {(() => {
-                const pricing = getDiscountedPrice(product);
-                return pricing.isOnSale ? (
-                  <>
-                    <span className="text-sm sm:text-base font-bold text-foreground">
-                      Rs. {pricing.discountedPrice.toFixed(2)}
-                    </span>
-                    <span className="text-xs text-muted-foreground line-through">
-                      Rs. {pricing.originalPrice.toFixed(2)}
-                    </span>
-                    <span className="text-[10px] font-bold bg-red-100 text-red-700 px-1.5 py-0.5 rounded">
-                      {pricing.discount}% OFF
-                    </span>
-                  </>
-                ) : (
+              {pricing.isOnSale ? (
+                <>
                   <span className="text-sm sm:text-base font-bold text-foreground">
-                    Rs. {product.price.toFixed(2)}
+                    Rs. {pricing.discountedPrice.toFixed(2)}
                   </span>
-                );
-              })()}
+                  <span className="text-xs text-muted-foreground line-through">
+                    Rs. {pricing.originalPrice.toFixed(2)}
+                  </span>
+                  <span className="text-[10px] font-bold bg-red-100 text-red-700 px-1.5 py-0.5 rounded">
+                    {pricing.discount}% OFF
+                  </span>
+                </>
+              ) : (
+                <span className="text-sm sm:text-base font-bold text-foreground">
+                  Rs. {product.price.toFixed(2)}
+                </span>
+              )}
             </div>
           </div>
 
@@ -110,3 +107,6 @@ export default function ProductCard({ product }: ProductCardProps) {
     </Link>
   );
 }
+
+const ProductCard = memo(ProductCardComponent);
+export default ProductCard;

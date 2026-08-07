@@ -1,31 +1,25 @@
+import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import CustomerLayoutWrapper from "@/components/CustomerLayoutWrapper";
 import { getStoreInformation } from "@/lib/store/get-store-information";
-import { StoreService } from "@/services/store.service";
+
+const getCachedStoreInfo = cache(
+  unstable_cache(
+    async () => getStoreInformation(),
+    ["customer-layout-store-info"],
+    { revalidate: 300, tags: ["store-info"] }
+  )
+);
 
 export default async function CustomerLayoutServer({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const storeInfo = await getStoreInformation();
-
-  let logo: string | null = null;
-  try {
-    const settings = await StoreService.getStoreSettings();
-    if (settings?.logo) {
-      logo = settings.logo;
-    }
-  } catch (e) {
-    console.error("Error fetching store settings logo:", e);
-  }
-
-  const fullStoreInfo = {
-    ...storeInfo,
-    logo,
-  };
+  const storeInfo = await getCachedStoreInfo();
 
   return (
-    <CustomerLayoutWrapper storeInfo={fullStoreInfo}>
+    <CustomerLayoutWrapper storeInfo={storeInfo}>
       {children}
     </CustomerLayoutWrapper>
   );

@@ -7,28 +7,23 @@ export class CategoryRepository {
    * Find all active categories
    */
   static async findAllCategories() {
-    const categoryRecords = await db
-      .select()
-      .from(categories)
-      .where(eq(categories.isActive, true))
-      .orderBy(asc(categories.sortOrder));
-
-    // Get product count per category
-    const categoryIds = categoryRecords.map((c) => c.id);
-    let countsMap = new Map<string, number>();
-
-    if (categoryIds.length > 0) {
-      const counts = await db
+    const [categoryRecords, counts] = await Promise.all([
+      db
+        .select()
+        .from(categories)
+        .where(eq(categories.isActive, true))
+        .orderBy(asc(categories.sortOrder)),
+      db
         .select({
           categoryId: products.categoryId,
           total: count(),
         })
         .from(products)
         .where(eq(products.isActive, true))
-        .groupBy(products.categoryId);
+        .groupBy(products.categoryId),
+    ]);
 
-      countsMap = new Map(counts.map((item) => [item.categoryId, Number(item.total)]));
-    }
+    const countsMap = new Map(counts.map((item) => [item.categoryId, Number(item.total)]));
 
     return categoryRecords.map((cat) => ({
       ...cat,
@@ -116,14 +111,23 @@ export class CategoryRepository {
         break;
     }
 
-    const totalResult = await db
-      .select({ totalCount: count() })
-      .from(categories)
-      .where(whereClause);
+    const [totalResult, records] = await Promise.all([
+      db
+        .select({ totalCount: count() })
+        .from(categories)
+        .where(whereClause),
+      db
+        .select()
+        .from(categories)
+        .where(whereClause)
+        .orderBy(orderBy)
+        .limit(limit)
+        .offset(offset),
+    ]);
 
     const total = Number(totalResult[0]?.totalCount || 0);
 
-    if (total === 0) {
+    if (total === 0 || records.length === 0) {
       return {
         items: [],
         pagination: {
@@ -134,14 +138,6 @@ export class CategoryRepository {
         },
       };
     }
-
-    const records = await db
-      .select()
-      .from(categories)
-      .where(whereClause)
-      .orderBy(orderBy)
-      .limit(limit)
-      .offset(offset);
 
     const catIds = records.map((c) => c.id);
     let countsMap = new Map<string, number>();

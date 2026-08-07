@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, memo, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Tag } from "lucide-react";
@@ -10,18 +10,25 @@ interface CategorySectionProps {
   categories?: Category[];
 }
 
-export default function CategorySection({ categories: initialCategories }: CategorySectionProps) {
+function CategorySectionComponent({ categories: initialCategories }: CategorySectionProps) {
   const [categories, setCategories] = useState<Category[]>(initialCategories || []);
   const [loading, setLoading] = useState(!initialCategories || initialCategories.length === 0);
 
   useEffect(() => {
-    if (initialCategories && initialCategories.length > 0) return;
+    if (initialCategories && initialCategories.length > 0) {
+      setCategories(initialCategories);
+      setLoading(false);
+      return;
+    }
 
+    let isSubscribed = true;
     async function fetchCategories() {
       try {
         setLoading(true);
         const res = await fetch("/api/categories");
         const json = await res.json();
+        if (!isSubscribed) return;
+
         if (json.success && Array.isArray(json.data)) {
           setCategories(json.data);
         } else if (Array.isArray(json)) {
@@ -30,21 +37,31 @@ export default function CategorySection({ categories: initialCategories }: Categ
       } catch (err) {
         console.error("Error fetching categories:", err);
       } finally {
-        setLoading(false);
+        if (isSubscribed) setLoading(false);
       }
     }
     fetchCategories();
+
+    return () => {
+      isSubscribed = false;
+    };
   }, [initialCategories]);
 
   // Default fallback categories if DB has none or loading
-  const fallbackCategories = [
-    { id: "kurtis", name: "Designer Kurtis", slug: "kurtis", description: "Elegant daily & festive wear" },
-    { id: "coord-sets", name: "Co-ord Sets", slug: "coord-sets", description: "Contemporary matching sets" },
-    { id: "dresses", name: "Indo-Western Dresses", slug: "dresses", description: "Modern silhouettes & prints" },
-    { id: "cotton-kurtas", name: "Cotton Kurtas", slug: "cotton-kurtas", description: "Breathable pure cotton apparel" },
-  ];
+  const fallbackCategories = useMemo(
+    () => [
+      { id: "kurtis", name: "Designer Kurtis", slug: "kurtis", description: "Elegant daily & festive wear" },
+      { id: "coord-sets", name: "Co-ord Sets", slug: "coord-sets", description: "Contemporary matching sets" },
+      { id: "dresses", name: "Indo-Western Dresses", slug: "dresses", description: "Modern silhouettes & prints" },
+      { id: "cotton-kurtas", name: "Cotton Kurtas", slug: "cotton-kurtas", description: "Breathable pure cotton apparel" },
+    ],
+    []
+  );
 
-  const displayCategories = categories.length > 0 ? categories : fallbackCategories;
+  const displayCategories = useMemo(
+    () => (categories.length > 0 ? categories : fallbackCategories),
+    [categories, fallbackCategories]
+  );
 
   return (
     <section className="py-12 sm:py-16 bg-popover/30 border-b border-border/50">
@@ -91,6 +108,7 @@ export default function CategorySection({ categories: initialCategories }: Categ
                     src={(cat as any).imageUrl}
                     alt={cat.name}
                     fill
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                     className="object-cover transition-transform duration-500 group-hover:scale-105 opacity-20"
                   />
                 ) : (
@@ -123,3 +141,6 @@ export default function CategorySection({ categories: initialCategories }: Categ
     </section>
   );
 }
+
+const CategorySection = memo(CategorySectionComponent);
+export default CategorySection;

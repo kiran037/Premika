@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { ProductImageCarousel } from "@/components/product-image-carousel";
 import { ProductInfo } from "@/components/product-info";
 import { ProductTabs } from "@/components/product-tabs";
@@ -17,12 +18,20 @@ interface SingleProductPageProps {
   };
 }
 
+const getCachedProductBySlug = cache(async (productId: string) => {
+  return await ProductRepository.findProductBySlug(productId);
+});
+
+const getCachedSeoSettings = cache(async () => {
+  return await SeoService.getSeoSettings();
+});
+
 export async function generateMetadata({
   params,
 }: SingleProductPageProps): Promise<Metadata> {
   const [productItem, seo] = await Promise.all([
-    ProductRepository.findProductBySlug(params.productId),
-    SeoService.getSeoSettings(),
+    getCachedProductBySlug(params.productId),
+    getCachedSeoSettings(),
   ]);
 
   if (!productItem) {
@@ -91,7 +100,10 @@ export async function generateMetadata({
 }
 
 export default async function SingleProductPage({ params }: SingleProductPageProps) {
-  const productItem = await ProductRepository.findProductBySlug(params.productId);
+  const [productItem, seo] = await Promise.all([
+    getCachedProductBySlug(params.productId),
+    getCachedSeoSettings(),
+  ]);
 
   if (!productItem) {
     notFound();
@@ -99,8 +111,6 @@ export default async function SingleProductPage({ params }: SingleProductPagePro
 
   const product = ProductService.formatProductResponse(productItem);
   const pRecord = productItem.product;
-
-  const seo = await SeoService.getSeoSettings();
   const canonicalDomain = seo?.canonicalDomain || "https://premika.shop";
 
   // Fetch related products in category

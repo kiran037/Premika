@@ -1,3 +1,4 @@
+import { cache } from "react";
 import Link from "next/link";
 import { ArrowRight, Gift } from "lucide-react";
 import { Metadata } from "next";
@@ -12,10 +13,47 @@ import { CategoryService } from "@/services/category.service";
 import { SeoService } from "@/services/seo.service";
 import { StoreService } from "@/services/store.service";
 
+import { unstable_cache } from "next/cache";
+
 export const dynamic = "force-dynamic";
 
+const getCachedCategories = cache(
+  unstable_cache(
+    async () => CategoryService.getCategories(),
+    ["homepage-categories"],
+    { revalidate: 300, tags: ["categories"] }
+  )
+);
+
+const getCachedSeoSettings = cache(
+  unstable_cache(
+    async () => SeoService.getSeoSettings(),
+    ["homepage-seo-settings"],
+    { revalidate: 300, tags: ["seo-settings"] }
+  )
+);
+
+const getCachedStoreSettings = cache(
+  unstable_cache(
+    async () => StoreService.getStoreSettings(),
+    ["homepage-store-settings"],
+    { revalidate: 300, tags: ["store-settings"] }
+  )
+);
+
+const getHomepageData = cache(async () => {
+  const [{ items: products }, categories, seo, storeSettings] = await Promise.all([
+    ProductService.getProducts({ limit: 20 }),
+    getCachedCategories(),
+    getCachedSeoSettings(),
+    getCachedStoreSettings(),
+  ]);
+
+  return { products, categories, seo, storeSettings };
+});
+
 export async function generateMetadata(): Promise<Metadata> {
-  const seo = await SeoService.getSeoSettings();
+  const { seo } = await getHomepageData();
 
   const title = seo?.defaultMetaTitle || "Premika - Premium Designer Kurtis Online";
   const description =
@@ -60,12 +98,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Homepage() {
-  const [{ items: products }, categories, seo, storeSettings] = await Promise.all([
-    ProductService.getProducts({ limit: 20 }),
-    CategoryService.getCategories(),
-    SeoService.getSeoSettings(),
-    StoreService.getStoreSettings(),
-  ]);
+  const { products, categories, seo, storeSettings } = await getHomepageData();
 
   const siteUrl = seo?.canonicalDomain || "https://premika.shop";
 
