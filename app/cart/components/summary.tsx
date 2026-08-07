@@ -101,16 +101,16 @@ const SummaryContent = () => {
 
   return (
     <div className="mt-4 sm:mt-6 lg:mt-0">
-      {/* Order Summary */}
-      <div className="bg-gray-50 rounded-lg px-3 py-4 sm:px-4 sm:py-5 md:px-5 md:py-6 lg:px-6 lg:py-8 sticky top-4 sm:top-6 z-10 shadow-sm border border-gray-100">
-        <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-extrabold text-secondary mb-3 sm:mb-4 md:mb-5 lg:mb-6">
+      {/* Order Summary Card */}
+      <div className="bg-white rounded-xl px-4 py-5 sm:px-5 sm:py-6 md:px-6 md:py-7 lg:px-7 lg:py-8 sticky top-4 sm:top-6 z-10 shadow-xs hover:shadow-md border border-primary/20 transition-all duration-300">
+        <h2 className="text-lg sm:text-xl font-bold text-foreground mb-4 sm:mb-5 tracking-tight">
           Order Summary
         </h2>
 
         {/* Price Breakdown */}
-        <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-5 md:mb-6">
+        <div className="space-y-3.5 mb-5 sm:mb-6">
           {/* Subtotal */}
-          <div className="flex justify-between text-foreground text-sm sm:text-base">
+          <div className="flex justify-between text-foreground text-sm sm:text-base font-medium">
             <span>
               Subtotal (
               {items.reduce((total, item) => total + (item.quantity || 1), 0)}{" "}
@@ -127,14 +127,14 @@ const SummaryContent = () => {
 
           {/* Sale Discount */}
           {saleDiscount > 0 && (
-            <div className="flex justify-between text-red-600 text-sm sm:text-base">
-              <div className="flex items-center space-x-1">
-                <Percent size={12} className="sm:w-4 sm:h-4 flex-shrink-0" />
-                <span className="text-xs sm:text-sm">
+            <div className="flex justify-between text-red-600 text-sm sm:text-base font-medium">
+              <div className="flex items-center space-x-1.5">
+                <Percent size={14} className="flex-shrink-0" />
+                <span className="text-xs sm:text-sm font-semibold">
                   Sale Discount
                 </span>
               </div>
-              <span className="text-sm sm:text-base flex items-center">
+              <span className="text-sm sm:text-base font-bold flex items-center">
                 - <Currency value={saleDiscount} />
               </span>
             </div>
@@ -142,10 +142,10 @@ const SummaryContent = () => {
 
           {/* Applied Coupon */}
           {appliedCoupon && (
-            <div className="flex justify-between text-green-600 text-sm sm:text-base">
-              <div className="flex items-center space-x-1">
-                <Tag size={14} className="sm:w-4 sm:h-4" />
-                <span>
+            <div className="flex justify-between text-emerald-700 text-sm sm:text-base font-medium">
+              <div className="flex items-center space-x-1.5">
+                <Tag size={14} className="text-emerald-700" />
+                <span className="font-semibold text-xs sm:text-sm">
                   Coupon {appliedCoupon.couponCode} (
                   {appliedCoupon.discountType === "percentage"
                     ? `${appliedCoupon.discountValue}% OFF`
@@ -153,38 +153,41 @@ const SummaryContent = () => {
                   )
                 </span>
                 <button
+                  type="button"
                   onClick={handleRemoveCoupon}
                   aria-label="Remove coupon"
-                  className="text-red-500 hover:text-red-700 ml-1 sm:ml-2 text-lg leading-none p-1 min-w-[28px] min-h-[28px] inline-flex items-center justify-center rounded focus:outline-none focus:ring-1 focus:ring-red-500"
+                  className="text-red-500 hover:text-red-700 ml-1.5 text-base leading-none p-1 rounded hover:bg-red-50 focus:outline-none"
                   title="Remove Coupon"
                 >
                   ×
                 </button>
               </div>
-              <span className="flex items-center">
+              <span className="flex items-center font-bold">
                 - <Currency value={couponDiscount} />
               </span>
             </div>
           )}
 
           {/* Shipping */}
-          <div className="flex justify-between text-foreground text-sm sm:text-base">
-            <div className="flex items-center space-x-1">
-              <Truck size={14} className="sm:w-4 sm:h-4" />
+          <div className="flex justify-between text-foreground text-sm sm:text-base font-medium">
+            <div className="flex items-center space-x-1.5">
+              <Truck size={15} className="text-primary" />
               <span>Shipping</span>
             </div>
-            <span className="text-green-600 font-medium">FREE</span>
+            <span className="text-emerald-700 font-bold text-xs sm:text-sm uppercase tracking-wider bg-emerald-50 px-2 py-0.5 rounded">
+              FREE
+            </span>
           </div>
 
           {/* Total */}
-          <div className="border-t border-background pt-3 sm:pt-4">
-            <div className="flex justify-between text-base sm:text-lg md:text-xl font-extrabold text-foreground">
+          <div className="border-t border-stone-200 pt-4">
+            <div className="flex justify-between text-base sm:text-lg md:text-xl font-bold text-foreground">
               <span>Total</span>
               <Currency value={totalPrice} />
             </div>
             {totalDiscount > 0 && (
-              <div className="flex justify-between text-xs sm:text-sm text-green-600 mt-1">
-                <span>You saved</span>
+              <div className="flex justify-between text-xs sm:text-sm text-emerald-700 font-semibold mt-1">
+                <span>Total Savings</span>
                 <Currency value={totalDiscount} />
               </div>
             )}
@@ -193,30 +196,30 @@ const SummaryContent = () => {
 
         <Link href="/checkout" className="block">
           <Button
-            className="w-full mb-3 sm:mb-4 py-2 sm:py-3 text-sm sm:text-base md:text-lg bg-foreground text-background hover:bg-secondary transition-colors"
+            className="w-full mb-4 py-3 text-sm sm:text-base font-bold bg-foreground text-background hover:bg-secondary rounded-lg transition-colors shadow-xs hover:shadow-md"
           >
             Proceed to Checkout
           </Button>
         </Link>
 
         {/* Security & Trust Indicators */}
-        <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-foreground mb-4 sm:mb-5 md:mb-6">
+        <div className="space-y-2 text-xs sm:text-sm text-muted-foreground mb-5">
           <div className="flex items-center space-x-2">
-            <CreditCard className="h-3 w-3 sm:h-4 sm:w-4 text-purple-500 flex-shrink-0" />
-            <span>Multiple payment options accepted</span>
+            <CreditCard className="h-4 w-4 text-primary flex-shrink-0" />
+            <span>Multiple secure payment options accepted</span>
           </div>
         </div>
 
         {/* Coupon Code Section */}
-        <div className="border-t border-background pt-3 sm:pt-4">
-          <h3 className="text-sm sm:text-base font-medium text-foreground mb-2 sm:mb-3 flex items-center space-x-2">
-            <Tag className="h-3 w-3 sm:h-4 sm:w-4" />
+        <div className="border-t border-stone-200 pt-4">
+          <h3 className="text-xs sm:text-sm font-semibold text-foreground mb-2.5 flex items-center space-x-2">
+            <Tag className="h-4 w-4 text-primary" />
             <span>Have a promo code?</span>
           </h3>
           <div className="flex flex-col xs:flex-row space-y-2 xs:space-y-0 xs:space-x-2">
             <input
               type="text"
-              placeholder="Enter promo code"
+              placeholder="ENTER PROMO CODE"
               value={couponInputCode}
               onChange={(e) => setCouponInputCode(e.target.value)}
               onKeyDown={(e) => {
@@ -225,14 +228,13 @@ const SummaryContent = () => {
                   handleApplyCoupon();
                 }
               }}
-              className="flex-1 px-2 sm:px-3 py-2 text-xs sm:text-sm border border-background rounded-md focus:outline-none focus:ring-2 focus:ring-foreground focus:border-transparent uppercase"
+              className="flex-1 px-3 py-2 text-xs sm:text-sm bg-stone-50 border border-stone-200 rounded-lg focus:outline-none focus:border-[#B67B5C] uppercase text-stone-900 placeholder:text-stone-400 font-mono"
             />
             <Button
+              type="button"
               onClick={handleApplyCoupon}
-              variant="outline"
-              size="sm"
               disabled={!couponInputCode.trim() || isApplyingCoupon}
-              className="hover:bg-primary hover:text-background transition-colors border border-foreground text-xs sm:text-sm px-3 py-2 w-full xs:w-auto"
+              className="bg-foreground text-background hover:bg-secondary transition-colors text-xs sm:text-sm px-4 py-2 font-bold rounded-lg w-full xs:w-auto"
             >
               {isApplyingCoupon ? "Applying..." : "Apply"}
             </Button>

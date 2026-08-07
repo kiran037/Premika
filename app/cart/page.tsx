@@ -91,16 +91,16 @@ const CartPage = () => {
             // Cart with Items
             <div className="space-y-4 sm:space-y-6 lg:grid lg:grid-cols-12 lg:items-start lg:gap-x-6 xl:gap-x-8 2xl:gap-x-12 lg:space-y-0">
               <div className="lg:col-span-7 xl:col-span-8">
-                <div className="bg-gray-50 rounded-lg p-3 sm:p-4 md:p-5 lg:p-6 mb-4 sm:mb-6">
-                  <div className="flex flex-col space-y-3 sm:flex-row sm:justify-between sm:items-center sm:space-y-0 mb-3 sm:mb-4 md:mb-5">
-                    <h3 className="text-sm sm:text-base md:text-lg font-semibold text-foreground">
+                <div className="bg-white rounded-xl border border-primary/20 p-4 sm:p-5 md:p-6 mb-4 sm:mb-6 shadow-xs hover:shadow-md transition-all duration-300">
+                  <div className="flex flex-col space-y-3 sm:flex-row sm:justify-between sm:items-center sm:space-y-0 mb-4 sm:mb-5">
+                    <h3 className="text-base sm:text-lg font-bold text-foreground">
                       Cart Items
                     </h3>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={cart.removeAll}
-                      className="text-foreground hover:text-background hover:bg-[#E0BCA2] text-xs sm:text-sm md:text-base self-end sm:self-auto px-3 py-2 sm:px-4"
+                      className="text-foreground hover:text-background hover:bg-red-500 hover:border-red-500 text-xs sm:text-sm self-end sm:self-auto px-3 py-1.5 transition-colors"
                     >
                       Clear Cart
                     </Button>
@@ -116,12 +116,12 @@ const CartPage = () => {
                 </div>
 
                 {/* Additional Information */}
-                <div className="bg-[#E0BCA2] border border-primary rounded-lg p-3 sm:p-4 md:p-5">
-                  <h4 className="font-semibold text-foreground mb-2 sm:mb-3 text-sm sm:text-base md:text-lg flex items-center gap-2">
-                    <Lightbulb className="w-4 h-4 sm:w-5 sm:h-5" /> Shopping
+                <div className="bg-[#E0BCA2] border border-primary/30 rounded-xl p-4 sm:p-5 shadow-xs">
+                  <h4 className="font-bold text-foreground mb-2 sm:mb-3 text-sm sm:text-base flex items-center gap-2">
+                    <Lightbulb className="w-4 h-4 sm:w-5 sm:h-5 text-primary" /> Shopping
                     Tips
                   </h4>
-                  <ul className="list-disc pl-4 sm:pl-5 text-xs sm:text-sm md:text-base text-foreground space-y-1 sm:space-y-2">
+                  <ul className="list-disc pl-4 sm:pl-5 text-xs sm:text-sm text-foreground space-y-1 sm:space-y-2">
                     <li>Free shipping on all orders!</li>
                     <li>Secure checkout with multiple payment options.</li>
                     <li>

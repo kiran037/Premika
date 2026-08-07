@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import { Footer } from "@/components/footer";
 import ModalProvider from "@/providers/modal-provider";
-import ToastProvider from "@/providers/toast-provider";
+import { StoreToaster, AdminToaster } from "@/providers/toast-provider";
 import MainNavbar from "@/components/resize-navbar";
 import type { StoreInformation } from "@/lib/store/get-store-information";
 
@@ -20,7 +20,7 @@ export default function CustomerLayoutWrapper({
   if (isAdminRoute) {
     return (
       <>
-        <ToastProvider />
+        <AdminToaster />
         {children}
       </>
     );
@@ -31,7 +31,7 @@ export default function CustomerLayoutWrapper({
       <div>
         <MainNavbar />
         <ModalProvider />
-        <ToastProvider />
+        <StoreToaster />
         {children}
       </div>
       <Footer storeInfo={storeInfo} />

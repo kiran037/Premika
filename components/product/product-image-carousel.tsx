@@ -57,7 +57,6 @@ export function ProductImageCarousel({ images, alt }: ProductImageCarouselProps)
           height={720}
           className="w-full h-full object-cover transition-opacity duration-300"
           priority={true}
-          loading="eager"
         />
 
         {/* Navigation Arrows */}
@@ -109,8 +108,7 @@ export function ProductImageCarousel({ images, alt }: ProductImageCarouselProps)
               width={120}
               height={160}
               className="w-full h-full object-cover"
-              priority={index <= 3}
-              loading={index <= 3 ? "eager" : "lazy"}
+              loading="lazy"
             />
           </div>
         ))}

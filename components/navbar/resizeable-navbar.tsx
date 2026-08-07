@@ -240,9 +240,9 @@ export const NavbarLogo: React.FC<NavbarLogoProps> = ({
     >
       <Image
         src={logoSrc}
-        alt={displayName}
-        width={30}
-        height={30}
+        alt={`${displayName} Storefront`}
+        width={32}
+        height={32}
         className="rounded object-contain"
         priority
       />

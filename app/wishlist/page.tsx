@@ -10,6 +10,7 @@ import Currency from "@/components/ui/currency";
 import useWishlist from "@/hooks/use-wishlist";
 import useCart from "@/hooks/use-cart";
 import { getDiscountedPrice } from "@/lib/pricing";
+import ProductCard from "@/components/product-card";
 import { WishlistItem } from "@/types";
 
 export default function WishlistPage() {
@@ -117,73 +118,30 @@ export default function WishlistPage() {
                 </Button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-                {wishlist.items.map((item) => {
-                  const pricing = getDiscountedPrice({ price: item.price });
-                  const imageSrc = item.images && item.images.length > 0 ? item.images[0] : "/placeholder.svg";
-
-                  return (
-                    <div
-                      key={item.id}
-                      className="bg-white rounded-lg border border-background shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col overflow-hidden"
-                    >
-                      {/* Product Image */}
-                      <div className="relative aspect-[3/4] bg-gray-100 overflow-hidden">
-                        <Link href={`/${item.id}`}>
-                          <Image
-                            fill
-                            src={imageSrc}
-                            alt={item.name}
-                            className="object-cover object-top hover:scale-105 transition-transform duration-200 cursor-pointer"
-                          />
-                        </Link>
-                        <button
-                          onClick={() => wishlist.removeItem(item.id)}
-                          className="absolute top-2 right-2 p-1.5 bg-white/80 backdrop-blur-sm rounded-full text-gray-600 hover:text-red-600 hover:bg-white transition-colors"
-                          title="Remove from wishlist"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-
-                      {/* Details */}
-                      <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
-                        <div className="space-y-1">
-                          <Link href={`/${item.id}`} className="hover:underline">
-                            <h3 className="text-base font-bold text-foreground line-clamp-1">
-                              {item.name}
-                            </h3>
-                          </Link>
-                          {item.category && (
-                            <p className="text-xs text-primary capitalize">{item.category}</p>
-                          )}
-                          <div className="flex items-center gap-2 pt-1">
-                            <span className="text-base font-bold text-foreground">
-                              <Currency value={pricing.discountedPrice} />
-                            </span>
-                            {pricing.isOnSale && (
-                              <span className="text-xs text-gray-500 line-through">
-                                <Currency value={pricing.originalPrice} />
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Actions */}
-                        <div className="pt-2 space-y-2">
-                          <Button
-                            onClick={() => handleMoveToCart(item)}
-                            disabled={!item.inStock}
-                            className="w-full flex items-center justify-center gap-2 bg-foreground hover:bg-secondary text-background text-sm py-2 disabled:opacity-50"
-                          >
-                            <ShoppingBag size={16} />
-                            <span>{item.inStock ? "Move to Cart" : "Out of Stock"}</span>
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+              {/* Shared Product Grid Layout */}
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                {wishlist.items.map((item) => (
+                  <ProductCard
+                    key={item.id}
+                    product={item as any}
+                    variant="wishlist"
+                    onActionClick={() => handleMoveToCart(item)}
+                    topRightAction={
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          wishlist.removeItem(item.id);
+                        }}
+                        className="p-1.5 bg-white/80 backdrop-blur-sm rounded-full text-stone-600 hover:text-red-600 hover:bg-white transition-colors shadow-xs"
+                        title="Remove from wishlist"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    }
+                  />
+                ))}
               </div>
             </div>
           )}

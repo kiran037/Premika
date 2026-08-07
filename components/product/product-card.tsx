@@ -4,16 +4,43 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, memo } from "react";
 import { getDiscountedPrice } from "@/lib/pricing";
-import { Product } from "@/types";
+import { Product, WishlistItem } from "@/types";
 import HeartButton from "@/components/ui/heart-button";
 
 interface ProductCardProps {
-  product: Product;
+  product: Product | WishlistItem;
+  variant?: "default" | "wishlist";
+  onActionClick?: (e: React.MouseEvent, product: any) => void;
+  actionLabel?: string;
+  topRightAction?: React.ReactNode;
 }
 
-function ProductCardComponent({ product }: ProductCardProps) {
+function ProductCardComponent({
+  product,
+  variant = "default",
+  onActionClick,
+  actionLabel,
+  topRightAction,
+}: ProductCardProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const pricing = getDiscountedPrice(product);
+
+  const images = product.images && product.images.length > 0 ? product.images : ["/placeholder.svg"];
+  const displayImage = images[currentImageIndex] || images[0] || "/placeholder.svg";
+
+  const handleCtaClick = (e: React.MouseEvent) => {
+    if (onActionClick) {
+      e.preventDefault();
+      e.stopPropagation();
+      onActionClick(e, product);
+    }
+  };
+
+  const defaultCtaText = variant === "wishlist"
+    ? (product.inStock ? "Move to Cart" : "Out of Stock")
+    : (product.inStock ? "View Details" : "Out of Stock");
+
+  const buttonText = actionLabel || defaultCtaText;
 
   return (
     <Link href={`/${product.id}`} className="block h-full">
@@ -21,12 +48,12 @@ function ProductCardComponent({ product }: ProductCardProps) {
         {/* Product Image Container */}
         <div
           className="relative aspect-[3/4] overflow-hidden bg-popover/20"
-          onMouseEnter={() => setCurrentImageIndex(1)}
+          onMouseEnter={() => setCurrentImageIndex(images.length > 1 ? 1 : 0)}
           onMouseLeave={() => setCurrentImageIndex(0)}
         >
           {/* Main Product Image */}
           <Image
-            src={product.images[currentImageIndex] || product.images[0] || "/placeholder.svg"}
+            src={displayImage}
             alt={product.name}
             fill
             loading="lazy"
@@ -35,9 +62,9 @@ function ProductCardComponent({ product }: ProductCardProps) {
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           />
 
-          {/* Heart Button Overlay */}
+          {/* Top Right Action Overlay (Trash button or Heart button) */}
           <div className="absolute top-2.5 right-2.5 z-10">
-            <HeartButton product={product} size={18} />
+            {topRightAction ? topRightAction : <HeartButton product={product as Product} size={18} />}
           </div>
 
           {/* Out of Stock Badge */}
@@ -97,10 +124,11 @@ function ProductCardComponent({ product }: ProductCardProps) {
           {/* CTA Button */}
           <button
             type="button"
-            className="w-full mt-3 px-3 py-2 text-xs sm:text-sm font-semibold text-background bg-foreground rounded-md group-hover:bg-secondary transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={handleCtaClick}
+            className="w-full mt-3 px-3 py-2 text-xs sm:text-sm font-semibold text-background bg-foreground rounded-md group-hover:bg-secondary transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
             disabled={!product.inStock}
           >
-            {product.inStock ? "View Details" : "Out of Stock"}
+            {buttonText}
           </button>
         </div>
       </div>
