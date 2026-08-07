@@ -54,6 +54,7 @@ function CollectionContent() {
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
   useEffect(() => {
+    let isSubscribed = true;
     async function loadCollectionData() {
       try {
         setLoading(true);
@@ -64,6 +65,8 @@ function CollectionContent() {
 
         const prodJson = await prodRes.json();
         const catJson = await catRes.json();
+
+        if (!isSubscribed) return;
 
         if (prodJson.success && Array.isArray(prodJson.data)) {
           setProducts(prodJson.data);
@@ -79,10 +82,14 @@ function CollectionContent() {
       } catch (err) {
         console.error("Error loading collection data:", err);
       } finally {
-        setLoading(false);
+        if (isSubscribed) setLoading(false);
       }
     }
     loadCollectionData();
+
+    return () => {
+      isSubscribed = false;
+    };
   }, []);
 
   const activeFilterCount = useMemo(() => {

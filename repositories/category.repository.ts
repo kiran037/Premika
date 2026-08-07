@@ -1,67 +1,90 @@
+import { cache } from "react";
+import { unstable_cache, revalidateTag } from "next/cache";
 import { db } from "@/db/client";
 import { categories, products } from "@/db/schema";
 import { eq, and, asc, desc, count, or, ilike, inArray } from "drizzle-orm";
+
+const cachedFindAllCategories = cache(
+  unstable_cache(
+    async () => {
+      const [categoryRecords, counts] = await Promise.all([
+        db
+          .select()
+          .from(categories)
+          .where(eq(categories.isActive, true))
+          .orderBy(asc(categories.sortOrder)),
+        db
+          .select({
+            categoryId: products.categoryId,
+            total: count(),
+          })
+          .from(products)
+          .where(eq(products.isActive, true))
+          .groupBy(products.categoryId),
+      ]);
+
+      const countsMap = new Map(counts.map((item) => [item.categoryId, Number(item.total)]));
+
+      return categoryRecords.map((cat) => ({
+        ...cat,
+        productCount: countsMap.get(cat.id) || 0,
+      }));
+    },
+    ["repository-all-categories"],
+    { revalidate: 300, tags: ["categories"] }
+  )
+);
+
+const cachedFindCategoryBySlug = cache(
+  (slugOrId: string) =>
+    unstable_cache(
+      async () => {
+        const categoryRecord = await db
+          .select()
+          .from(categories)
+          .where(
+            and(
+              eq(categories.isActive, true),
+              eq(categories.slug, slugOrId)
+            )
+          )
+          .then((rows) => rows[0] || null);
+
+        if (!categoryRecord) return null;
+
+        const productCountResult = await db
+          .select({ total: count() })
+          .from(products)
+          .where(
+            and(
+              eq(products.isActive, true),
+              eq(products.categoryId, categoryRecord.id)
+            )
+          );
+
+        return {
+          ...categoryRecord,
+          productCount: Number(productCountResult[0]?.total || 0),
+        };
+      },
+      [`repository-category-slug-${slugOrId}`],
+      { revalidate: 300, tags: ["categories", `category-${slugOrId}`] }
+    )()
+);
 
 export class CategoryRepository {
   /**
    * Find all active categories
    */
   static async findAllCategories() {
-    const [categoryRecords, counts] = await Promise.all([
-      db
-        .select()
-        .from(categories)
-        .where(eq(categories.isActive, true))
-        .orderBy(asc(categories.sortOrder)),
-      db
-        .select({
-          categoryId: products.categoryId,
-          total: count(),
-        })
-        .from(products)
-        .where(eq(products.isActive, true))
-        .groupBy(products.categoryId),
-    ]);
-
-    const countsMap = new Map(counts.map((item) => [item.categoryId, Number(item.total)]));
-
-    return categoryRecords.map((cat) => ({
-      ...cat,
-      productCount: countsMap.get(cat.id) || 0,
-    }));
+    return cachedFindAllCategories();
   }
 
   /**
    * Find category by slug or id
    */
   static async findCategoryBySlug(slugOrId: string) {
-    const categoryRecord = await db
-      .select()
-      .from(categories)
-      .where(
-        and(
-          eq(categories.isActive, true),
-          eq(categories.slug, slugOrId)
-        )
-      )
-      .then((rows) => rows[0] || null);
-
-    if (!categoryRecord) return null;
-
-    const productCountResult = await db
-      .select({ total: count() })
-      .from(products)
-      .where(
-        and(
-          eq(products.isActive, true),
-          eq(products.categoryId, categoryRecord.id)
-        )
-      );
-
-    return {
-      ...categoryRecord,
-      productCount: Number(productCountResult[0]?.total || 0),
-    };
+    return cachedFindCategoryBySlug(slugOrId);
   }
 
   /**
@@ -184,19 +207,31 @@ export class CategoryRepository {
 
     if (!record) return null;
 
-    const countRes = await db
-      .select({ total: count() })
-      .from(products)
-      .where(eq(products.categoryId, id));
+    const [countRes, assignedProducts] = await Promise.all([
+      db
+        .select({ total: count() })
+        .from(products)
+        .where(eq(products.categoryId, id)),
+      db
+        .select()
+        .from(products)
+        .where(eq(products.categoryId, id))
+        .orderBy(desc(products.createdAt))
+        .limit(50),
+    ]);
 
     return {
       ...record,
       productCount: Number(countRes[0]?.total || 0),
+      products: assignedProducts,
     };
   }
 
   static async createAdminCategory(data: any) {
     const [created] = await db.insert(categories).values(data).returning();
+    try {
+      revalidateTag("categories");
+    } catch {}
     return created;
   }
 
@@ -209,6 +244,9 @@ export class CategoryRepository {
       })
       .where(eq(categories.id, id))
       .returning();
+    try {
+      revalidateTag("categories");
+    } catch {}
     return updated;
   }
 
@@ -224,6 +262,9 @@ export class CategoryRepository {
       })
       .where(eq(categories.id, id))
       .returning();
+    try {
+      revalidateTag("categories");
+    } catch {}
     return updated;
   }
 
@@ -232,34 +273,42 @@ export class CategoryRepository {
       .delete(categories)
       .where(eq(categories.id, id))
       .returning();
+    try {
+      revalidateTag("categories");
+    } catch {}
     return deleted;
   }
 
   static async bulkAdminCategoryAction(ids: string[], action: "activate" | "deactivate" | "delete") {
     if (ids.length === 0) return { affected: 0 };
 
+    let affected = 0;
     if (action === "activate") {
       const updated = await db
         .update(categories)
         .set({ isActive: true, updatedAt: new Date() })
         .where(inArray(categories.id, ids))
         .returning();
-      return { affected: updated.length };
+      affected = updated.length;
     } else if (action === "deactivate") {
       const updated = await db
         .update(categories)
         .set({ isActive: false, updatedAt: new Date() })
         .where(inArray(categories.id, ids))
         .returning();
-      return { affected: updated.length };
+      affected = updated.length;
     } else if (action === "delete") {
       const deleted = await db
         .delete(categories)
         .where(inArray(categories.id, ids))
         .returning();
-      return { affected: deleted.length };
+      affected = deleted.length;
     }
 
-    return { affected: 0 };
+    try {
+      revalidateTag("categories");
+    } catch {}
+
+    return { affected };
   }
 }

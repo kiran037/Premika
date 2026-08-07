@@ -1,3 +1,5 @@
+import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import { db } from "@/db/client";
 import { storeSettings, storeContacts, socialLinks } from "@/db/schema/store";
 import { asc } from "drizzle-orm";
@@ -51,7 +53,7 @@ const DEFAULT_STORE_INFO: StoreInformation = {
   logo: null,
 };
 
-export async function getStoreInformation(): Promise<StoreInformation> {
+const fetchStoreInformation = async (): Promise<StoreInformation> => {
   if (typeof window !== "undefined") {
     return DEFAULT_STORE_INFO;
   }
@@ -118,6 +120,14 @@ export async function getStoreInformation(): Promise<StoreInformation> {
     console.error("Error in getStoreInformation:", err);
     return DEFAULT_STORE_INFO;
   }
-}
+};
+
+export const getStoreInformation = cache(
+  unstable_cache(
+    fetchStoreInformation,
+    ["get-store-information-fn"],
+    { revalidate: 300, tags: ["store-info", "store-settings", "store-contacts", "social-links"] }
+  )
+);
 
 export default getStoreInformation;

@@ -1,3 +1,4 @@
+import { cache } from "react";
 import {
   ProductRepository,
   ProductWithRelations,
@@ -6,6 +7,12 @@ import { CategoryRepository } from "@/repositories/category.repository";
 import { GetProductsInput, getProductsQuerySchema } from "@/lib/validations/product.query";
 import { productSeoSchema } from "@/lib/validations/seo";
 import { Product, SizeOption, HeightOption, Review } from "@/types";
+
+const cachedGetProductBySlug = cache(async (slug: string): Promise<Product | null> => {
+  const item = await ProductRepository.findProductBySlug(slug);
+  if (!item) return null;
+  return ProductService.formatProductResponse(item);
+});
 
 export class ProductService {
   /**
@@ -100,12 +107,10 @@ export class ProductService {
   }
 
   /**
-   * Get single product by slug
+   * Get single product by slug (Deduplicated per-request via React cache)
    */
   static async getProductBySlug(slug: string): Promise<Product | null> {
-    const item = await ProductRepository.findProductBySlug(slug);
-    if (!item) return null;
-    return this.formatProductResponse(item);
+    return cachedGetProductBySlug(slug);
   }
 
   /**

@@ -172,7 +172,7 @@ export default function AdminProductsPage() {
     if (selectedIds.length === products.length) {
       setSelectedIds([]);
     } else {
-      setSelectedIds(products.map((item) => item.product.id));
+      setSelectedIds(products.map((item) => item.id || item.product?.id));
     }
   };
 
@@ -314,16 +314,24 @@ export default function AdminProductsPage() {
           isEmpty={!isLoading && products.length === 0}
           emptyText="No products found matching your filters"
         >
-          {products.map(({ product, category, images }) => {
-            const primaryImg = images[0]?.image || "/placeholder.svg";
+          {products.map((item) => {
+            const pId = item.id || item.product?.id;
+            const pName = item.name || item.product?.name || "Untitled Product";
+            const pSlug = item.slug || item.product?.slug || "";
+            const pPrice = item.price ?? item.product?.price ?? 0;
+            const pFeatured = item.featured ?? item.product?.featured ?? false;
+            const pNewArrival = item.newArrival ?? item.product?.newArrival ?? false;
+            const pIsActive = item.isActive ?? item.product?.isActive ?? false;
+            const pCategory = item.category || null;
+            const primaryImg = item.primaryImage || item.images?.[0]?.image || "/placeholder.svg";
 
             return (
-              <tr key={product.id} className="hover:bg-stone-50 text-xs">
+              <tr key={pId} className="hover:bg-stone-50 text-xs">
                 <td className="px-6 py-3">
                   <input
                     type="checkbox"
-                    checked={selectedIds.includes(product.id)}
-                    onChange={() => toggleSelectOne(product.id)}
+                    checked={selectedIds.includes(pId)}
+                    onChange={() => toggleSelectOne(pId)}
                     className="rounded text-[#B67B5C]"
                   />
                 </td>
@@ -332,42 +340,42 @@ export default function AdminProductsPage() {
                 <td className="px-6 py-3">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg overflow-hidden bg-stone-100 border border-stone-200 relative flex-shrink-0">
-                      <Image src={primaryImg} alt={product.name} fill className="object-cover" />
+                      <Image src={primaryImg} alt={pName} fill className="object-cover" />
                     </div>
                     <div>
-                      <p className="font-semibold text-stone-900">{product.name}</p>
-                      <p className="text-[10px] text-stone-400 font-mono">Slug: {product.slug}</p>
+                      <p className="font-semibold text-stone-900">{pName}</p>
+                      <p className="text-[10px] text-stone-400 font-mono">Slug: {pSlug}</p>
                     </div>
                   </div>
                 </td>
 
                 {/* Category */}
                 <td className="px-6 py-3 font-medium text-stone-700">
-                  {category ? category.name : "Uncategorized"}
+                  {pCategory ? pCategory.name : "Uncategorized"}
                 </td>
 
                 {/* Price */}
                 <td className="px-6 py-3 font-bold text-stone-900">
-                  ₹{product.price.toLocaleString()}
+                  ₹{pPrice.toLocaleString()}
                 </td>
 
                 {/* Featured Toggle */}
                 <td className="px-6 py-3">
                   <button
-                    onClick={() => handleToggleStatus(product.id, "featured")}
-                    className={`p-1 rounded-md transition ${product.featured ? "text-amber-500 bg-amber-50" : "text-stone-300 hover:text-stone-500"
+                    onClick={() => handleToggleStatus(pId, "featured")}
+                    className={`p-1 rounded-md transition ${pFeatured ? "text-amber-500 bg-amber-50" : "text-stone-300 hover:text-stone-500"
                       }`}
                     title="Toggle Featured"
                   >
-                    <Star size={16} fill={product.featured ? "currentColor" : "none"} />
+                    <Star size={16} fill={pFeatured ? "currentColor" : "none"} />
                   </button>
                 </td>
 
                 {/* New Arrival Toggle */}
                 <td className="px-6 py-3">
                   <button
-                    onClick={() => handleToggleStatus(product.id, "newArrival")}
-                    className={`p-1 rounded-md transition ${product.newArrival ? "text-purple-600 bg-purple-50" : "text-stone-300 hover:text-stone-500"
+                    onClick={() => handleToggleStatus(pId, "newArrival")}
+                    className={`p-1 rounded-md transition ${pNewArrival ? "text-purple-600 bg-purple-50" : "text-stone-300 hover:text-stone-500"
                       }`}
                     title="Toggle New Arrival"
                   >
@@ -378,34 +386,34 @@ export default function AdminProductsPage() {
                 {/* Active Toggle */}
                 <td className="px-6 py-3">
                   <button
-                    onClick={() => handleToggleStatus(product.id, "isActive")}
-                    className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-[11px] font-semibold transition ${product.isActive
+                    onClick={() => handleToggleStatus(pId, "isActive")}
+                    className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-[11px] font-semibold transition ${pIsActive
                         ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                         : "bg-red-50 text-red-700 border border-red-200"
                       }`}
                   >
-                    {product.isActive ? <CheckCircle size={12} /> : <XCircle size={12} />}
-                    <span>{product.isActive ? "Active" : "Inactive"}</span>
+                    {pIsActive ? <CheckCircle size={12} /> : <XCircle size={12} />}
+                    <span>{pIsActive ? "Active" : "Inactive"}</span>
                   </button>
                 </td>
 
                 {/* Action Buttons */}
                 <td className="px-6 py-3">
                   <div className="flex items-center gap-2">
-                    <Link href={`/admin/products/${product.id}`} title="View Product Details">
+                    <Link href={`/admin/products/${pId}`} title="View Product Details">
                       <button className="p-1.5 text-stone-500 hover:text-stone-900 hover:bg-stone-100 rounded-lg">
                         <Eye size={15} />
                       </button>
                     </Link>
 
-                    <Link href={`/admin/products/${product.id}/edit`} title="Edit Product">
+                    <Link href={`/admin/products/${pId}/edit`} title="Edit Product">
                       <button className="p-1.5 text-stone-500 hover:text-[#B67B5C] hover:bg-[#B67B5C]/10 rounded-lg">
                         <Edit size={15} />
                       </button>
                     </Link>
 
                     <a
-                      href={`/${product.slug}`}
+                      href={`/${pSlug}`}
                       target="_blank"
                       rel="noreferrer"
                       title="Preview Storefront Page"
@@ -415,7 +423,7 @@ export default function AdminProductsPage() {
                     </a>
 
                     <button
-                      onClick={() => setDeleteTargetId(product.id)}
+                      onClick={() => setDeleteTargetId(pId)}
                       className="p-1.5 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
                       title="Delete Product"
                     >

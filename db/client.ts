@@ -13,8 +13,8 @@ const client =
   postgres(connectionString, {
     prepare: false,
     max: process.env.NODE_ENV === "production" ? 10 : 5,
-    idle_timeout: 30,
-    connect_timeout: 10,
+    idle_timeout: 15,
+    connect_timeout: 15,
     max_lifetime: 0,
   });
 

@@ -89,8 +89,10 @@ export default function CategoryDetailPage() {
     );
   }
 
-  const { category, productCount, products } = data;
-  const bannerImg = category.image || "/placeholder.svg";
+  const category = data.category || data;
+  const productCount = data.productCount ?? category.productCount ?? 0;
+  const products = data.products || category.products || [];
+  const bannerImg = category.image || category.banner || "/placeholder.svg";
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-16">
@@ -148,7 +150,7 @@ export default function CategoryDetailPage() {
         {/* Banner Preview */}
         <div className="space-y-3">
           <div className="relative aspect-16/9 md:aspect-4/3 bg-stone-100 rounded-2xl overflow-hidden border border-stone-200">
-            <Image src={bannerImg} alt={category.name} fill className="object-cover" />
+            <Image src={bannerImg} alt={category.name || "Category"} fill className="object-cover" />
           </div>
         </div>
 
@@ -182,7 +184,7 @@ export default function CategoryDetailPage() {
 
       {/* Products Belonging to Category */}
       <AdminCard
-        title={`Products in ${category.name}`}
+        title={`Products in ${category.name || "Category"}`}
         description={`List of ${products.length} product(s) assigned to this category`}
       >
         <AdminTable
@@ -194,7 +196,7 @@ export default function CategoryDetailPage() {
             <tr key={p.id} className="hover:bg-stone-50 text-xs">
               <td className="px-6 py-3 font-semibold text-stone-900">{p.name}</td>
               <td className="px-6 py-3 font-mono text-stone-600">{p.slug}</td>
-              <td className="px-6 py-3 font-bold text-stone-900">₹{p.price.toLocaleString()}</td>
+              <td className="px-6 py-3 font-bold text-stone-900">₹{p.price?.toLocaleString() || 0}</td>
               <td className="px-6 py-3">
                 {p.isActive ? (
                   <AdminBadge variant="green">Active</AdminBadge>

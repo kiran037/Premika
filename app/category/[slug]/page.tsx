@@ -9,6 +9,7 @@ import { SeoService } from "@/services/seo.service";
 import { CategoryRepository } from "@/repositories/category.repository";
 import { Tag, ShoppingBag } from "lucide-react";
 import { Metadata } from "next";
+import CategoryClientContent from "./category-client-content";
 
 interface CategoryPageProps {
   params: {
@@ -105,43 +106,6 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
 
   const canonicalDomain = seo?.canonicalDomain || "https://premika.shop";
 
-  // Search parameters filters
-  const availabilityFilter = searchParams?.availability || "";
-  const isFeaturedOnly = searchParams?.featured === "true";
-  const isNewOnly = searchParams?.new === "true";
-  const sortBy = searchParams?.sort || "featured";
-
-  let filteredProducts = [...allProducts];
-
-  if (availabilityFilter === "in-stock") {
-    filteredProducts = filteredProducts.filter((p) => p.inStock);
-  } else if (availabilityFilter === "out-of-stock") {
-    filteredProducts = filteredProducts.filter((p) => !p.inStock);
-  }
-
-  if (isFeaturedOnly) {
-    filteredProducts = filteredProducts.filter((p) => (p as any).isFeatured || p.featured);
-  }
-
-  if (isNewOnly) {
-    filteredProducts = filteredProducts.filter((p) => p.newArrival || (p as any).isFeatured || p.featured);
-  }
-
-  if (sortBy === "price-low") {
-    filteredProducts.sort((a, b) => a.price - b.price);
-  } else if (sortBy === "price-high") {
-    filteredProducts.sort((a, b) => b.price - a.price);
-  } else if (sortBy === "name") {
-    filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
-  } else if (sortBy === "newest") {
-    filteredProducts.sort((a, b) => (b.createdAt || b.id || "").localeCompare(a.createdAt || a.id || ""));
-  }
-
-  let activeFilterCount = 0;
-  if (availabilityFilter) activeFilterCount++;
-  if (isFeaturedOnly) activeFilterCount++;
-  if (isNewOnly) activeFilterCount++;
-
   const breadcrumbs = [
     { name: "Home", url: canonicalDomain },
     { name: "Shop", url: `${canonicalDomain}/shop` },
@@ -150,7 +114,6 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Structured Data JSON-LD */}
       <JsonLd type="BreadcrumbList" items={breadcrumbs} />
 
       {/* Category Header Banner */}
@@ -172,56 +135,12 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
         </div>
       </div>
 
-      {/* Category Products Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Sidebar Filters */}
-          <div className="hidden lg:block lg:col-span-1">
-            <div className="sticky top-24">
-              <ShopFilters
-                categories={categories}
-                selectedCategory={displayCategoryName}
-                onSelectCategory={() => {}}
-                availabilityFilter={availabilityFilter}
-                onSelectAvailability={() => {}}
-                isFeaturedOnly={isFeaturedOnly}
-                onToggleFeatured={() => {}}
-                isNewOnly={isNewOnly}
-                onToggleNew={() => {}}
-                onClearAll={() => {}}
-                activeFilterCount={activeFilterCount}
-              />
-            </div>
-          </div>
-
-          {/* Products Grid Area */}
-          <div className="lg:col-span-3">
-            <ShopToolbar
-              totalProducts={filteredProducts.length}
-              sortBy={sortBy}
-              onSortChange={() => {}}
-              onOpenMobileFilters={() => {}}
-              activeFilterCount={activeFilterCount}
-            />
-
-            {filteredProducts.length === 0 ? (
-              <div className="text-center py-16 bg-popover/20 border border-dashed border-primary/30 rounded-xl p-8">
-                <ShoppingBag size={36} className="mx-auto text-primary/60 mb-3" />
-                <h3 className="text-lg font-bold text-foreground mb-1">No Products Found</h3>
-                <p className="text-xs sm:text-sm text-muted-foreground max-w-sm mx-auto mb-6">
-                  We couldn&apos;t find any products matching the {displayCategoryName} category.
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-                {filteredProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      <CategoryClientContent
+        displayCategoryName={displayCategoryName}
+        categories={categories}
+        allProducts={allProducts}
+        initialSearchParams={searchParams}
+      />
     </div>
   );
 }

@@ -1,13 +1,23 @@
+import { cache } from "react";
+import { unstable_cache, revalidateTag } from "next/cache";
 import { SeoRepository } from "@/repositories/seo.repository";
 import { SeoSettings, NewSeoSettings } from "@/db/schema/seo";
 import { globalSeoSchema, GlobalSeoInput } from "@/lib/validations/seo";
+
+const cachedGetSeoSettings = cache(
+  unstable_cache(
+    async (): Promise<SeoSettings> => SeoRepository.getSeoSettings(),
+    ["service-seo-settings"],
+    { revalidate: 300, tags: ["seo-settings"] }
+  )
+);
 
 export class SeoService {
   /**
    * Retrieve global SEO settings
    */
   static async getSeoSettings(): Promise<SeoSettings> {
-    return await SeoRepository.getSeoSettings();
+    return cachedGetSeoSettings();
   }
 
   /**
@@ -30,6 +40,10 @@ export class SeoService {
       ...(validatedData.canonicalDomain !== undefined && { canonicalDomain: validatedData.canonicalDomain }),
     };
 
-    return await SeoRepository.updateSeoSettings(updatePayload);
+    const res = await SeoRepository.updateSeoSettings(updatePayload);
+    try {
+      revalidateTag("seo-settings");
+    } catch {}
+    return res;
   }
 }
