@@ -31,9 +31,10 @@ export class DelhiveryService {
    * Helper for standard API request headers
    */
   private static getHeaders(contentType: string = "application/json") {
+    const token = DELHIVERY_CONFIG.apiToken;
     return {
       "Content-Type": contentType,
-      Authorization: `Token ${DELHIVERY_CONFIG.apiToken}`,
+      Authorization: `Token ${token}`,
       Accept: "application/json",
     };
   }
@@ -226,6 +227,12 @@ export class DelhiveryService {
         console.error(
           `[Delhivery Error] Endpoint: ${endpoint} | Status: ${res.status} | Response: ${rawText}`
         );
+        if (res.status === 401) {
+          return {
+            success: false,
+            error: "Delhivery authentication failed (HTTP 401). Verify the configured Delhivery API credentials and environment.",
+          };
+        }
         return {
           success: false,
           error: `Delhivery API HTTP ${res.status}: ${rawText}`,
@@ -319,6 +326,12 @@ export class DelhiveryService {
         )}&token=${encodeURIComponent(token)}`;
       const res = await fetch(url, { headers: this.getHeaders() });
       if (!res.ok) {
+        if (res.status === 401) {
+          return {
+            success: false,
+            error: "Delhivery authentication failed (HTTP 401). Verify the configured Delhivery API credentials and environment.",
+          };
+        }
         return {
           success: false,
           error: `Failed to fetch tracking info (${res.status})`,
@@ -371,6 +384,12 @@ export class DelhiveryService {
         }/api/p/packing_slip?wbns=${encodeURIComponent(waybill)}&pdf=true`;
       const res = await fetch(url, { headers: this.getHeaders() });
       if (!res.ok) {
+        if (res.status === 401) {
+          return {
+            success: false,
+            error: "Delhivery authentication failed (HTTP 401). Verify the configured Delhivery API credentials and environment.",
+          };
+        }
         return {
           success: false,
           error: `Failed to fetch label (${res.status})`,

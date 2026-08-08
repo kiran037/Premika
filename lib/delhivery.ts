@@ -1,12 +1,14 @@
 export const DELHIVERY_CONFIG = {
   get baseUrl() {
-    return process.env.DELHIVERY_API_URL || "https://track.delhivery.com";
+    return (process.env.DELHIVERY_API_URL || "https://track.delhivery.com")
+      .trim()
+      .replace(/\/+$/, "");
   },
   get apiToken() {
-    return process.env.DELHIVERY_API_TOKEN || "";
+    return (process.env.DELHIVERY_API_TOKEN || "").trim();
   },
   get webhookSecret() {
-    return process.env.DELHIVERY_WEBHOOK_SECRET || "";
+    return (process.env.DELHIVERY_WEBHOOK_SECRET || "").trim();
   },
 };
 
